@@ -1,36 +1,31 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Header } from "./header";
 import { BottomBar } from "./bottom-bar";
 import { Sidebar } from "@/components/sidebar/sidebar";
 import { PdfPreview } from "@/components/main/pdf-preview";
 
-// Placeholder data until hooks are wired in commit 13
-const PLACEHOLDER_FOLDERS = [
-  { folderId: "AA", docCount: 19, docs: Array.from({ length: 3 }, (_, i) => ({ id: `aa-${i}`, fileName: `AA.${1000 + i}_CEO20240523.pdf`, status: null as null })) },
-  { folderId: "CMC", docCount: 4, docs: Array.from({ length: 4 }, (_, i) => ({ id: `cmc-${i}`, fileName: `CMC.${3001 + i}_CEO20240523.pdf`, status: null as null })) },
-  { folderId: "DD", docCount: 11, docs: [] },
-  { folderId: "EE", docCount: 12, docs: [] },
-  { folderId: "FF", docCount: 24, docs: [] },
-  { folderId: "GA", docCount: 5, docs: [] },
-  { folderId: "GG", docCount: 144, docs: [] },
-  { folderId: "HH", docCount: 47, docs: [] },
-  { folderId: "MA", docCount: 69, docs: [] },
-  { folderId: "PA", docCount: 38, docs: [] },
-];
+interface PolicyDoc {
+  id: string;
+  fileName: string;
+  status?: "met" | "not_met" | "unclear" | null;
+}
 
-const PLACEHOLDER_COMPLIANCE: Array<{
+interface PolicyFolderData {
+  folderId: string;
+  docCount: number;
+  docs: PolicyDoc[];
+}
+
+interface ComplianceDocData {
   id: string;
   fileName: string;
   hasResults?: boolean;
   metCount?: number;
   notMetCount?: number;
   unclearCount?: number;
-}> = [
-  { id: "easy", fileName: "Example Input Doc - Easy.pdf" },
-  { id: "hard", fileName: "Example Input Doc - Hard.pdf" },
-];
+}
 
 interface PreviewState {
   id: string;
@@ -43,6 +38,36 @@ export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPolicies, setSelectedPolicies] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [policyFolders, setPolicyFolders] = useState<PolicyFolderData[]>([]);
+  const [complianceDocs, setComplianceDocs] = useState<ComplianceDocData[]>([]);
+
+  // Fetch policies and compliance docs from API
+  useEffect(() => {
+    fetch("/api/policies")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.folders) setPolicyFolders(data.folders);
+      })
+      .catch(() => {});
+
+    fetch("/api/compliance")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.docs) {
+          setComplianceDocs(
+            data.docs.map((d: any) => ({
+              id: d.id,
+              fileName: d.fileName,
+              hasResults: !!d.latestRun?.completedAt,
+              metCount: d.latestRun?.metCount ?? 0,
+              notMetCount: d.latestRun?.notMetCount ?? 0,
+              unclearCount: d.latestRun?.unclearCount ?? 0,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -68,19 +93,17 @@ export function AppShell() {
 
   const openPreview = useCallback(
     async (id: string, docType: "policy" | "compliance") => {
-      // Find the filename from placeholder data
       let fileName = "";
       if (docType === "policy") {
-        for (const folder of PLACEHOLDER_FOLDERS) {
+        for (const folder of policyFolders) {
           const doc = folder.docs.find((d) => d.id === id);
           if (doc) { fileName = doc.fileName; break; }
         }
       } else {
-        const doc = PLACEHOLDER_COMPLIANCE.find((d) => d.id === id);
+        const doc = complianceDocs.find((d) => d.id === id);
         if (doc) fileName = doc.fileName;
       }
 
-      // Try fetching preview URL from API (will work once DB is connected)
       let pdfUrl: string | null = null;
       try {
         const res = await fetch(`/api/preview/${id}`);
@@ -88,13 +111,11 @@ export function AppShell() {
           const data = await res.json();
           pdfUrl = data.url;
         }
-      } catch {
-        // API not available yet — show placeholder
-      }
+      } catch {}
 
       setPreview({ id, fileName, docType, pdfUrl });
     },
-    []
+    [policyFolders, complianceDocs]
   );
 
   const handleClickPolicy = useCallback(
@@ -130,8 +151,8 @@ export function AppShell() {
       <div className="flex min-h-0 flex-1">
         <Sidebar
           open={sidebarOpen}
-          policyFolders={PLACEHOLDER_FOLDERS}
-          complianceDocs={PLACEHOLDER_COMPLIANCE}
+          policyFolders={policyFolders}
+          complianceDocs={complianceDocs}
           selectedPolicyIds={selectedPolicies}
           onSelectPolicy={handleSelectPolicy}
           onClickPolicy={handleClickPolicy}
@@ -141,7 +162,6 @@ export function AppShell() {
           onAddComplianceDoc={handleAddComplianceDoc}
         />
 
-        {/* Main content area */}
         <main className="min-w-0 flex-1 pb-24">
           {preview ? (
             <PdfPreview
