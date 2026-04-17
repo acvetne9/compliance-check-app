@@ -42,7 +42,7 @@ export function PdfPreview({
               className="gap-1.5 text-xs"
             >
               <Play className="size-3" />
-              Run Compliance
+              {docType === "compliance" ? "Run Compliance" : "View Results"}
             </Button>
           )}
           <button

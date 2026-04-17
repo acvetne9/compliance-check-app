@@ -1,15 +1,21 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Paperclip, ArrowUp, X, FileText } from "lucide-react";
+import { Paperclip, ArrowUp, X, FileText, Play } from "lucide-react";
 
 interface BottomBarProps {
   selectedPolicyCount: number;
   hasComplianceDoc: boolean;
   onSubmit: (file: File) => void;
+  onRunActive?: () => void;
 }
 
-export function BottomBar({ selectedPolicyCount, hasComplianceDoc, onSubmit }: BottomBarProps) {
+export function BottomBar({
+  selectedPolicyCount,
+  hasComplianceDoc,
+  onSubmit,
+  onRunActive,
+}: BottomBarProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,20 +54,20 @@ export function BottomBar({ selectedPolicyCount, hasComplianceDoc, onSubmit }: B
     [handleFile]
   );
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmitFile = useCallback(() => {
     if (file) {
       onSubmit(file);
       setFile(null);
     }
   }, [file, onSubmit]);
 
-  const canRun = hasComplianceDoc;
-
-  const helperText = !hasComplianceDoc
-    ? "Select a compliance doc from the sidebar, then run against all or selected policies."
+  const helperText = !hasComplianceDoc && !file
+    ? "Select a compliance doc from the sidebar, or upload one here."
     : selectedPolicyCount > 0
       ? `Running against ${selectedPolicyCount} selected ${selectedPolicyCount === 1 ? "policy" : "policies"}`
       : "Running against all policies";
+
+  const canRun = hasComplianceDoc || file;
 
   return (
     <div className="bg-background px-4 pb-5 pt-3">
@@ -124,18 +130,26 @@ export function BottomBar({ selectedPolicyCount, hasComplianceDoc, onSubmit }: B
             )}
           </div>
 
-          {canRun && (
+          {/* Upload + run new file */}
+          {file && (
             <button
-              onClick={handleSubmit}
-              disabled={!file}
-              className={`inline-flex size-8 shrink-0 items-center justify-center rounded-xl transition-all ${
-                file
-                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  : "bg-secondary text-muted-foreground"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
-              aria-label="Run compliance check"
+              onClick={handleSubmitFile}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+              aria-label="Upload and run compliance"
             >
               <ArrowUp className="size-4" />
+            </button>
+          )}
+
+          {/* Run against already-selected compliance doc */}
+          {!file && hasComplianceDoc && onRunActive && (
+            <button
+              onClick={onRunActive}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+              aria-label="Run compliance check"
+            >
+              <Play className="size-3" />
+              Run
             </button>
           )}
         </div>
