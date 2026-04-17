@@ -14,6 +14,7 @@ interface ComplianceDoc {
 
 interface ComplianceListProps {
   docs: ComplianceDoc[];
+  activeDocId: string | null;
   searchFilter: string;
   onClickDoc: (id: string) => void;
   onAddDoc: () => void;
@@ -21,6 +22,7 @@ interface ComplianceListProps {
 
 export function ComplianceList({
   docs,
+  activeDocId,
   searchFilter,
   onClickDoc,
   onAddDoc,
@@ -53,6 +55,7 @@ export function ComplianceList({
               key={doc.id}
               id={doc.id}
               fileName={doc.fileName}
+              active={doc.id === activeDocId}
               hasResults={doc.hasResults}
               metCount={doc.metCount}
               notMetCount={doc.notMetCount}

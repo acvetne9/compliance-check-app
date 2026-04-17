@@ -37,6 +37,7 @@ interface PreviewState {
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPolicies, setSelectedPolicies] = useState<Set<string>>(new Set());
+  const [activeComplianceDocId, setActiveComplianceDocId] = useState<string | null>(null);
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [policyFolders, setPolicyFolders] = useState<PolicyFolderData[]>([]);
   const [complianceDocs, setComplianceDocs] = useState<ComplianceDocData[]>([]);
@@ -75,6 +76,7 @@ export function AppShell() {
 
   const handleNewRun = useCallback(() => {
     setSelectedPolicies(new Set());
+    setActiveComplianceDocId(null);
     setPreview(null);
   }, []);
 
@@ -145,7 +147,11 @@ export function AppShell() {
   );
 
   const handleClickComplianceDoc = useCallback(
-    (id: string) => openPreview(id, "compliance"),
+    (id: string) => {
+      // Toggle: click again to deselect
+      setActiveComplianceDocId((prev) => (prev === id ? null : id));
+      openPreview(id, "compliance");
+    },
     [openPreview]
   );
 
@@ -180,6 +186,7 @@ export function AppShell() {
           onClickPolicy={handleClickPolicy}
           onRemovePolicy={handleRemovePolicy}
           onAddPolicy={handleAddPolicy}
+          activeComplianceDocId={activeComplianceDocId}
           onClickComplianceDoc={handleClickComplianceDoc}
           onAddComplianceDoc={handleAddComplianceDoc}
         />
@@ -205,6 +212,7 @@ export function AppShell() {
       >
         <BottomBar
           selectedPolicyCount={selectedPolicies.size}
+          hasComplianceDoc={activeComplianceDocId !== null}
           onSubmit={handleSubmit}
         />
       </div>

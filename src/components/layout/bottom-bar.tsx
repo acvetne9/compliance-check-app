@@ -5,10 +5,11 @@ import { Paperclip, ArrowUp, X, FileText } from "lucide-react";
 
 interface BottomBarProps {
   selectedPolicyCount: number;
+  hasComplianceDoc: boolean;
   onSubmit: (file: File) => void;
 }
 
-export function BottomBar({ selectedPolicyCount, onSubmit }: BottomBarProps) {
+export function BottomBar({ selectedPolicyCount, hasComplianceDoc, onSubmit }: BottomBarProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,10 +55,13 @@ export function BottomBar({ selectedPolicyCount, onSubmit }: BottomBarProps) {
     }
   }, [file, onSubmit]);
 
-  const helperText =
-    selectedPolicyCount > 0
+  const canRun = hasComplianceDoc;
+
+  const helperText = !hasComplianceDoc
+    ? "Select a compliance doc from the sidebar, then run against all or selected policies."
+    : selectedPolicyCount > 0
       ? `Running against ${selectedPolicyCount} selected ${selectedPolicyCount === 1 ? "policy" : "policies"}`
-      : "Upload a compliance doc and run against all policies, or select specific docs from the sidebar first.";
+      : "Running against all policies";
 
   return (
     <div className="bg-background px-4 pb-5 pt-3">
@@ -120,18 +124,20 @@ export function BottomBar({ selectedPolicyCount, onSubmit }: BottomBarProps) {
             )}
           </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={!file}
-            className={`inline-flex size-8 shrink-0 items-center justify-center rounded-xl transition-all ${
-              file
-                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                : "bg-secondary text-muted-foreground"
-            } disabled:cursor-not-allowed disabled:opacity-50`}
-            aria-label="Run compliance check"
-          >
-            <ArrowUp className="size-4" />
-          </button>
+          {canRun && (
+            <button
+              onClick={handleSubmit}
+              disabled={!file}
+              className={`inline-flex size-8 shrink-0 items-center justify-center rounded-xl transition-all ${
+                file
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "bg-secondary text-muted-foreground"
+              } disabled:cursor-not-allowed disabled:opacity-50`}
+              aria-label="Run compliance check"
+            >
+              <ArrowUp className="size-4" />
+            </button>
+          )}
         </div>
 
         <p className="mt-2 px-1 text-center text-xs text-muted-foreground/70">

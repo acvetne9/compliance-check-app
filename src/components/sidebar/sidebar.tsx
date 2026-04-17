@@ -37,6 +37,7 @@ interface SidebarProps {
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
   onAddPolicy: () => void;
+  activeComplianceDocId: string | null;
   onClickComplianceDoc: (id: string) => void;
   onAddComplianceDoc: () => void;
 }
@@ -51,6 +52,7 @@ export function Sidebar({
   onClickPolicy,
   onRemovePolicy,
   onAddPolicy,
+  activeComplianceDocId,
   onClickComplianceDoc,
   onAddComplianceDoc,
 }: SidebarProps) {
@@ -80,6 +82,7 @@ export function Sidebar({
 
             <ComplianceList
               docs={complianceDocs}
+              activeDocId={activeComplianceDocId}
               searchFilter={search}
               onClickDoc={onClickComplianceDoc}
               onAddDoc={onAddComplianceDoc}
