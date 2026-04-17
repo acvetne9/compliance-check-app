@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { ProgressEvent } from "@/lib/workflow/compliance-run";
+import type { ProgressEvent } from "@/types";
 
 export type RunStatus = "idle" | "starting" | "running" | "completed" | "error";
 

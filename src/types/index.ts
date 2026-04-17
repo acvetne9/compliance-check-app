@@ -50,6 +50,40 @@ export const complianceCheckSchema = z.object({
 export type ComplianceCheckResult = z.infer<typeof complianceCheckSchema>;
 
 // ---------------------------------------------------------------------------
+// Progress event types streamed during compliance runs
+// ---------------------------------------------------------------------------
+
+export type ProgressEvent =
+  | { type: "started"; runId: string; complianceDocId: string }
+  | { type: "extracting"; message: string }
+  | {
+      type: "requirements_extracted";
+      count: number;
+      documentTitle: string;
+    }
+  | {
+      type: "checking";
+      requirementIndex: number;
+      totalRequirements: number;
+      requirementText: string;
+    }
+  | {
+      type: "check_complete";
+      requirementIndex: number;
+      requirementId: string;
+      status: "met" | "not_met" | "unclear";
+      policyCount: number;
+    }
+  | {
+      type: "completed";
+      runId: string;
+      met: number;
+      notMet: number;
+      unclear: number;
+    }
+  | { type: "error"; message: string };
+
+// ---------------------------------------------------------------------------
 // Requirement hash utility
 // ---------------------------------------------------------------------------
 

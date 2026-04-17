@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Loader2, CheckCircle2, AlertCircle, Circle } from "lucide-react";
-import type { ProgressEvent } from "@/lib/workflow/compliance-run";
+import type { ProgressEvent } from "@/types";
 
 interface ProgressOverlayProps {
   events: ProgressEvent[];
