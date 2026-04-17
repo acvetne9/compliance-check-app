@@ -64,6 +64,7 @@ export const complianceDocs = pgTable("compliance_docs", {
     .$defaultFn(() => crypto.randomUUID()),
   fileName: text("file_name").notNull(),
   blobUrl: text("blob_url").notNull(),
+  textContent: text("text_content"),
   pageCount: integer("page_count"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });

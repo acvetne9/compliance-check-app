@@ -10,7 +10,7 @@ import {
   complianceResults,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { extractRequirementsFromPdf } from "@/lib/ai/extract-requirements";
+import { extractRequirements, extractRequirementsFromPdf } from "@/lib/ai/extract-requirements";
 import { checkRequirement } from "@/lib/ai/check-requirement";
 import { hashRequirementText } from "@/types";
 
@@ -69,22 +69,19 @@ export async function POST(request: NextRequest) {
 
         try {
           send({ type: "started", runId: run.id, complianceDocId });
-          send({ type: "extracting", message: "Fetching compliance document..." });
 
-          // Fetch PDF from blob
-          const response = await fetch(doc.blobUrl);
-          const pdfBuffer = Buffer.from(await response.arrayBuffer());
-
-          send({
-            type: "extracting",
-            message: "Sending PDF to Claude for requirement extraction...",
-          });
-
-          // Extract requirements using Claude's native PDF support (no pdf-parse needed)
-          const extracted = await extractRequirementsFromPdf(
-            pdfBuffer,
-            doc.fileName
-          );
+          let extracted;
+          if (doc.textContent) {
+            // Fast path: use pre-extracted text (much faster than sending PDF)
+            send({ type: "extracting", message: "Extracting compliance requirements..." });
+            extracted = await extractRequirements(doc.textContent, doc.fileName);
+          } else {
+            // Fallback: send raw PDF to Claude (slower but works without pre-extraction)
+            send({ type: "extracting", message: "Fetching and analyzing PDF..." });
+            const response = await fetch(doc.blobUrl);
+            const pdfBuffer = Buffer.from(await response.arrayBuffer());
+            extracted = await extractRequirementsFromPdf(pdfBuffer, doc.fileName);
+          }
 
           send({
             type: "requirements_extracted",
