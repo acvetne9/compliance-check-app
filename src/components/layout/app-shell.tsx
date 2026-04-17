@@ -374,6 +374,7 @@ export function AppShell() {
         <BottomBar
           selectedPolicyCount={selectedPolicies.size}
           hasComplianceDoc={activeComplianceDocId !== null}
+          isRunning={runStatus === "running" || runStatus === "starting"}
           onSubmit={handleUploadAndRun}
           onRunActive={
             activeComplianceDocId

@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Paperclip, ArrowUp, X, FileText, Play } from "lucide-react";
+import { Paperclip, ArrowUp, X, FileText, Play, Loader2 } from "lucide-react";
 
 interface BottomBarProps {
   selectedPolicyCount: number;
   hasComplianceDoc: boolean;
+  isRunning: boolean;
   onSubmit: (file: File) => void;
   onRunActive?: () => void;
 }
@@ -13,6 +14,7 @@ interface BottomBarProps {
 export function BottomBar({
   selectedPolicyCount,
   hasComplianceDoc,
+  isRunning,
   onSubmit,
   onRunActive,
 }: BottomBarProps) {
@@ -61,13 +63,13 @@ export function BottomBar({
     }
   }, [file, onSubmit]);
 
-  const helperText = !hasComplianceDoc && !file
-    ? "Select a compliance doc from the sidebar, or upload one here."
-    : selectedPolicyCount > 0
-      ? `Running against ${selectedPolicyCount} selected ${selectedPolicyCount === 1 ? "policy" : "policies"}`
-      : "Running against all policies";
-
-  const canRun = hasComplianceDoc || file;
+  const helperText = isRunning
+    ? "Compliance check in progress..."
+    : !hasComplianceDoc && !file
+      ? "Select a compliance doc from the sidebar, or upload one here."
+      : selectedPolicyCount > 0
+        ? `Running against ${selectedPolicyCount} selected ${selectedPolicyCount === 1 ? "policy" : "policies"}`
+        : "Running against all policies";
 
   return (
     <div className="bg-background px-4 pb-5 pt-3">
@@ -90,11 +92,13 @@ export function BottomBar({
             accept=".pdf,application/pdf"
             onChange={handleInputChange}
             className="hidden"
+            disabled={isRunning}
           />
 
           <button
             onClick={() => inputRef.current?.click()}
-            className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            disabled={isRunning}
+            className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             aria-label="Attach compliance PDF"
           >
             <Paperclip className="size-4" />
@@ -112,20 +116,27 @@ export function BottomBar({
                 </span>
                 <button
                   onClick={() => setFile(null)}
-                  className="ml-1 shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  disabled={isRunning}
+                  className="ml-1 shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                 >
                   <X className="size-3" />
                 </button>
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">
-                Drop compliance PDF here or click{" "}
-                <button
-                  onClick={() => inputRef.current?.click()}
-                  className="text-primary/80 underline underline-offset-2 transition-colors hover:text-primary"
-                >
-                  browse
-                </button>
+                {isRunning ? (
+                  "Processing..."
+                ) : (
+                  <>
+                    Drop compliance PDF here or click{" "}
+                    <button
+                      onClick={() => inputRef.current?.click()}
+                      className="text-primary/80 underline underline-offset-2 transition-colors hover:text-primary"
+                    >
+                      browse
+                    </button>
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -134,10 +145,15 @@ export function BottomBar({
           {file && (
             <button
               onClick={handleSubmitFile}
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+              disabled={isRunning}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-70"
               aria-label="Upload and run compliance"
             >
-              <ArrowUp className="size-4" />
+              {isRunning ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ArrowUp className="size-4" />
+              )}
             </button>
           )}
 
@@ -145,11 +161,16 @@ export function BottomBar({
           {!file && hasComplianceDoc && onRunActive && (
             <button
               onClick={onRunActive}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+              disabled={isRunning}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-70"
               aria-label="Run compliance check"
             >
-              <Play className="size-3" />
-              Run
+              {isRunning ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Play className="size-3" />
+              )}
+              {isRunning ? "Running..." : "Run"}
             </button>
           )}
         </div>
