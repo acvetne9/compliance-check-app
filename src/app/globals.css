@@ -54,43 +54,48 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Claude-inspired warm light theme */
+  --background: oklch(0.985 0.003 80);
+  --foreground: oklch(0.20 0.02 50);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.20 0.02 50);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
+  --popover-foreground: oklch(0.20 0.02 50);
+  --primary: oklch(0.45 0.08 50);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.005 70);
+  --secondary-foreground: oklch(0.30 0.02 50);
+  --muted: oklch(0.96 0.005 70);
+  --muted-foreground: oklch(0.50 0.01 50);
+  --accent: oklch(0.96 0.005 70);
+  --accent-foreground: oklch(0.30 0.02 50);
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(0.90 0.005 70);
+  --input: oklch(0.92 0.005 70);
+  --ring: oklch(0.45 0.08 50);
+  --chart-1: oklch(0.45 0.08 50);
+  --chart-2: oklch(0.55 0.22 25);
+  --chart-3: oklch(0.65 0.15 145);
+  --chart-4: oklch(0.556 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --teal: oklch(0.55 0.15 180);
-  --teal-dim: oklch(0.45 0.10 180);
-  --teal-glow: oklch(0.55 0.15 180 / 10%);
-  --surface-elevated: oklch(0.98 0 0);
-  --surface-sunken: oklch(0.95 0 0);
+
+  /* Sidebar: slightly warm off-white like Claude */
+  --sidebar: oklch(0.97 0.004 75);
+  --sidebar-foreground: oklch(0.25 0.02 50);
+  --sidebar-primary: oklch(0.45 0.08 50);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.008 70);
+  --sidebar-accent-foreground: oklch(0.25 0.02 50);
+  --sidebar-border: oklch(0.90 0.005 70);
+  --sidebar-ring: oklch(0.45 0.08 50);
+
+  /* Brand accent: warm terracotta/brown like Claude's send button */
+  --teal: oklch(0.45 0.08 50);
+  --teal-dim: oklch(0.40 0.06 50);
+  --teal-glow: oklch(0.45 0.08 50 / 12%);
+  --surface-elevated: oklch(1 0 0);
+  --surface-sunken: oklch(0.97 0.004 75);
 }
 
 .dark {
@@ -152,11 +157,6 @@
               transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Subtle teal glow on interactive elements */
-.teal-glow {
-  box-shadow: 0 0 0 1px var(--teal-glow), 0 0 20px -8px var(--teal-glow);
-}
-
 /* Upload zone dashed border animation */
 .upload-zone-border {
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%2345a29e' stroke-width='1.5' stroke-dasharray='8%2c 6' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e");
@@ -166,12 +166,7 @@
   background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%2345a29e' stroke-width='2' stroke-dasharray='8%2c 6' stroke-dashoffset='0' stroke-linecap='round'/%3e%3c/svg%3e");
 }
 
-/* Noise texture overlay */
-.noise-overlay::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.015;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+/* Subtle teal glow for light theme */
+.teal-glow {
+  box-shadow: 0 0 0 1px var(--teal-glow), 0 2px 8px -2px var(--teal-glow);
 }

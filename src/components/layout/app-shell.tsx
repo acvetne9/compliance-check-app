@@ -24,7 +24,7 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="noise-overlay relative flex h-full flex-col">
+    <div className="relative flex h-full flex-col bg-background">
       <Header
         sidebarOpen={sidebarOpen}
         onToggleSidebar={handleToggleSidebar}
@@ -39,8 +39,8 @@ export function AppShell() {
           {/* Center content — welcome state */}
           <div className="flex flex-1 items-center justify-center p-8">
             <div className="flex max-w-md flex-col items-center gap-6 text-center">
-              <div className="flex size-16 items-center justify-center rounded-2xl bg-teal/8 ring-1 ring-teal/10">
-                <ShieldCheck className="size-8 text-teal" strokeWidth={1.5} />
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/8 ring-1 ring-primary/10">
+                <ShieldCheck className="size-7 text-primary" strokeWidth={1.5} />
               </div>
 
               <div className="space-y-2">

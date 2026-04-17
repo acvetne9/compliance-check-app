@@ -26,15 +26,14 @@ export function Sidebar({ open, children }: SidebarProps) {
           <div className="flex flex-col gap-1 px-2 pb-4">
             {/* Policies section header */}
             <div className="flex items-center gap-2 px-2 pt-3 pb-1.5">
-              <FolderClosed className="size-3.5 text-teal-dim" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              <FolderClosed className="size-3.5 text-primary/60" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Policies
               </span>
             </div>
 
-            {/* Policy folder slots - populated by commit 11 */}
+            {/* Policy folder placeholders */}
             <div className="flex flex-col gap-0.5 px-1">
-              {/* Placeholder folders */}
               {["AA", "CMC", "DD", "EE", "FF", "GA", "GG", "HH", "MA", "PA"].map(
                 (folder) => (
                   <button
@@ -52,13 +51,13 @@ export function Sidebar({ open, children }: SidebarProps) {
 
             {/* Compliance section header */}
             <div className="flex items-center gap-2 px-2 pt-5 pb-1.5">
-              <ShieldCheck className="size-3.5 text-teal" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              <ShieldCheck className="size-3.5 text-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Compliance
               </span>
             </div>
 
-            {/* Compliance doc slots - populated by commit 11 */}
+            {/* Compliance doc placeholders */}
             <div className="flex flex-col gap-0.5 px-1">
               <p className="px-2.5 py-2 text-xs text-muted-foreground/50">
                 No compliance docs uploaded yet
