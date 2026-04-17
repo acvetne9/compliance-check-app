@@ -7,7 +7,7 @@ interface BottomBarProps {
   selectedPolicyCount: number;
   hasComplianceDoc: boolean;
   isRunning: boolean;
-  onSubmit: (file: File) => void;
+  onSubmit: (file: File) => void | Promise<void>;
   onRunActive?: () => void;
 }
 
@@ -20,7 +20,10 @@ export function BottomBar({
 }: BottomBarProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const busy = isRunning || isUploading;
 
   const handleFile = useCallback((f: File) => {
     if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
@@ -56,15 +59,20 @@ export function BottomBar({
     [handleFile]
   );
 
-  const handleSubmitFile = useCallback(() => {
+  const handleSubmitFile = useCallback(async () => {
     if (file) {
-      onSubmit(file);
+      setIsUploading(true);
+      try {
+        await onSubmit(file);
+      } finally {
+        setIsUploading(false);
+      }
       setFile(null);
     }
   }, [file, onSubmit]);
 
-  const helperText = isRunning
-    ? "Compliance check in progress..."
+  const helperText = busy
+    ? isUploading ? "Uploading document..." : "Compliance check in progress..."
     : !hasComplianceDoc && !file
       ? "Select a compliance doc from the sidebar, or upload one here."
       : selectedPolicyCount > 0
@@ -92,12 +100,12 @@ export function BottomBar({
             accept=".pdf,application/pdf"
             onChange={handleInputChange}
             className="hidden"
-            disabled={isRunning}
+            disabled={busy}
           />
 
           <button
             onClick={() => inputRef.current?.click()}
-            disabled={isRunning}
+            disabled={busy}
             className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             aria-label="Attach compliance PDF"
           >
@@ -114,17 +122,18 @@ export function BottomBar({
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {(file.size / 1024).toFixed(0)}KB
                 </span>
-                <button
-                  onClick={() => setFile(null)}
-                  disabled={isRunning}
-                  className="ml-1 shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                >
-                  <X className="size-3" />
-                </button>
+                {!busy && (
+                  <button
+                    onClick={() => setFile(null)}
+                    className="ml-1 shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {isRunning ? (
+                {busy ? (
                   "Processing..."
                 ) : (
                   <>
@@ -145,11 +154,11 @@ export function BottomBar({
           {file && (
             <button
               onClick={handleSubmitFile}
-              disabled={isRunning}
+              disabled={busy}
               className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-70"
               aria-label="Upload and run compliance"
             >
-              {isRunning ? (
+              {busy ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <ArrowUp className="size-4" />
@@ -161,16 +170,16 @@ export function BottomBar({
           {!file && hasComplianceDoc && onRunActive && (
             <button
               onClick={onRunActive}
-              disabled={isRunning}
+              disabled={busy}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-70"
               aria-label="Run compliance check"
             >
-              {isRunning ? (
+              {busy ? (
                 <Loader2 className="size-3 animate-spin" />
               ) : (
                 <Play className="size-3" />
               )}
-              {isRunning ? "Running..." : "Run"}
+              {busy ? "Running..." : "Run"}
             </button>
           )}
         </div>
