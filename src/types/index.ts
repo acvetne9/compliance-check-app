@@ -36,8 +36,6 @@ export const complianceCheckSchema = z.object({
   status: z.enum(["met", "not_met", "unclear"]),
   confidence: z
     .number()
-    .min(0)
-    .max(100)
     .describe("Confidence score 0-100"),
   evidence: z
     .string()
