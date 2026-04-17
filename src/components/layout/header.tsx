@@ -10,6 +10,9 @@ interface HeaderProps {
 }
 
 export function Header({ sidebarOpen, onToggleSidebar, onNewRun }: HeaderProps) {
+  // Offset title center by half the sidebar width when open
+  const titleOffset = sidebarOpen ? "calc(50% + 104px)" : "50%";
+
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-background px-3">
       <button
@@ -24,7 +27,10 @@ export function Header({ sidebarOpen, onToggleSidebar, onNewRun }: HeaderProps) 
         )}
       </button>
 
-      <span className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold tracking-tight text-foreground">
+      <span
+        className="absolute -translate-x-1/2 text-lg font-semibold tracking-tight text-foreground transition-all"
+        style={{ left: titleOffset }}
+      >
         AndreasGPT
       </span>
 

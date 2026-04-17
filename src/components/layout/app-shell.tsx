@@ -157,7 +157,10 @@ export function AppShell() {
         </main>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-10">
+      <div
+        className="fixed bottom-0 right-0 z-10 transition-all"
+        style={{ left: sidebarOpen ? "208px" : "0px" }}
+      >
         <BottomBar
           selectedPolicyCount={selectedPolicies.size}
           onSubmit={handleSubmit}
