@@ -583,8 +583,8 @@ export function AppShell() {
           )}
 
           {mainView === "preview+results" && preview && resultsData && (
-            <>
-              <div className="h-[40vh] min-h-[250px] shrink-0 border-b border-border/40">
+            <div className="flex flex-col">
+              <div className="h-[60vh] min-h-[350px] shrink-0">
                 <PdfPreview
                   fileName={preview.fileName}
                   pdfUrl={preview.pdfUrl}
@@ -592,15 +592,17 @@ export function AppShell() {
                   onClose={() => { setPreview(null); setResultsData(null); }}
                 />
               </div>
-              <ComplianceResults
-                documentTitle={resultsData.documentTitle}
-                requirements={resultsData.requirements}
-                metCount={resultsData.metCount}
-                notMetCount={resultsData.notMetCount}
-                unclearCount={resultsData.unclearCount}
-                viewMode={resultsData.viewMode}
-              />
-            </>
+              <div className="border-t border-border/40">
+                <ComplianceResults
+                  documentTitle={resultsData.documentTitle}
+                  requirements={resultsData.requirements}
+                  metCount={resultsData.metCount}
+                  notMetCount={resultsData.notMetCount}
+                  unclearCount={resultsData.unclearCount}
+                  viewMode={resultsData.viewMode}
+                />
+              </div>
+            </div>
           )}
 
           {mainView === "results" && resultsData && (

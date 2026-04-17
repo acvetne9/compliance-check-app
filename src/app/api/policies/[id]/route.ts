@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { deletePdf } from "@/lib/blob";
+import { sortByReqNumber } from "@/types";
 
 /**
  * GET /api/policies/[id]
@@ -47,7 +48,10 @@ export async function GET(
     .where(eq(complianceResults.policyId, id))
 ;
 
-  return NextResponse.json({ policy, complianceResults: results });
+  const sorted = sortByReqNumber(
+    results.map((r) => ({ ...r, externalId: r.requirementExternalId }))
+  );
+  return NextResponse.json({ policy, complianceResults: sorted });
 }
 
 /**
