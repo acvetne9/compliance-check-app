@@ -79,12 +79,16 @@ export function PolicyBrowser({
                   ? "all"
                   : "some";
 
+            const allHighlighted = folderDocIds.length > 0 &&
+              folderDocIds.every((id) => checkedPolicyIds.has(id));
+
             return (
               <PolicyFolder
                 key={folder.folderId}
                 folderId={folder.folderId}
                 docCount={folder.docs.length}
                 selected={folderSelected}
+                highlighted={allHighlighted}
                 onSelectFolder={onSelectFolder}
               >
                 {folder.docs.map((doc) => (
