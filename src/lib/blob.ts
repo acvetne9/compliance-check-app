@@ -15,6 +15,7 @@ export async function uploadPdf(
   const blob = await put(`${folder}/${fileName}`, buf, {
     access: "public",
     contentType: "application/pdf",
+    addRandomSuffix: true,
   });
   return blob.url;
 }
