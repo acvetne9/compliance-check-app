@@ -10,9 +10,6 @@ vi.mock("ai", () => ({
   generateObject: vi.fn(),
 }));
 
-vi.mock("@ai-sdk/openai", () => ({
-  openai: { embedding: vi.fn(() => "mocked-embedding-model") },
-}));
 
 vi.mock("@ai-sdk/anthropic", () => ({
   anthropic: vi.fn(() => "mocked-sonnet-model"),

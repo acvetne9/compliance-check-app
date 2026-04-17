@@ -11,9 +11,6 @@ vi.mock("@ai-sdk/anthropic", () => ({
   anthropic: vi.fn(() => "mocked-haiku-model"),
 }));
 
-vi.mock("@ai-sdk/openai", () => ({
-  openai: { embedding: vi.fn(() => "mocked-embedding-model") },
-}));
 
 import { generateObject } from "ai";
 import { triagePolicies } from "../triage";

@@ -2,7 +2,6 @@ import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { extractPdfText, type PdfExtraction } from "./pdf";
 import { chunkPages, type TextChunk } from "./chunker";
-import { generateEmbeddings } from "./ai/embeddings";
 import { db } from "./db";
 import { policies, policyChunks } from "./db/schema";
 import { uploadPdf } from "./blob";
@@ -80,17 +79,13 @@ export async function ingestPolicy(
   // 2. Upload PDF to Blob storage
   const blobUrl = await uploadPdf(fileName, buffer as Uint8Array, "policies");
 
-  // 3. Generate embeddings for all chunks in batch
-  const chunkTexts = chunks.map((c) => c.content);
-  const embeddings = await generateEmbeddings(chunkTexts);
-
-  // 4. Generate summaries via Haiku
+  // 3. Generate summaries via Haiku (used for triage matching)
   const { summary, structuredSummary } = await generatePolicySummary(
     extraction.text,
     fileName
   );
 
-  // 5. Store policy record
+  // 4. Store policy record
   const [policy] = await db
     .insert(policies)
     .values({
@@ -106,10 +101,10 @@ export async function ingestPolicy(
     })
     .returning({ id: policies.id });
 
-  // 6. Store chunks with embeddings
+  // 5. Store chunks (no embeddings — using Haiku triage instead)
   if (chunks.length > 0) {
     await db.insert(policyChunks).values(
-      chunks.map((chunk, i) => ({
+      chunks.map((chunk) => ({
         policyId: policy.id,
         chunkIndex: chunk.index,
         pageStart: chunk.pageStart,
@@ -117,7 +112,6 @@ export async function ingestPolicy(
         content: chunk.content,
         sectionHeader: chunk.sectionHeader,
         tokenCount: chunk.tokenCount,
-        embedding: embeddings[i],
       }))
     );
   }

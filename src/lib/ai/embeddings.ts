@@ -1,85 +1,32 @@
-import { embed, embedMany } from "ai";
-import { openai } from "@ai-sdk/openai";
+/**
+ * Embeddings module — replaced with Haiku-based relevance matching.
+ *
+ * Instead of vector embeddings (which require OpenAI/Voyage), we use
+ * Claude Haiku to match requirements to relevant policies via their
+ * structured summaries. This keeps the entire stack on a single
+ * Anthropic API key.
+ *
+ * The triage module (./triage.ts) handles relevance matching.
+ * The check-requirement module fetches full chunks for matched policies.
+ */
+
 import { db } from "@/lib/db";
 import { policyChunks } from "@/lib/db/schema";
-import { sql, cosineDistance, desc } from "drizzle-orm";
-
-const embeddingModel = openai.embedding("text-embedding-3-small");
+import { eq } from "drizzle-orm";
 
 /**
- * Generate an embedding for a single text string.
+ * Get all chunks for a specific policy.
  */
-export async function generateEmbedding(text: string): Promise<number[]> {
-  const { embedding } = await embed({ model: embeddingModel, value: text });
-  return embedding;
-}
-
-/**
- * Generate embeddings for multiple texts in batch.
- * Processes in parallel with a concurrency limit of 10.
- */
-export async function generateEmbeddings(
-  texts: string[]
-): Promise<number[][]> {
-  const { embeddings } = await embedMany({
-    model: embeddingModel,
-    values: texts,
-    maxParallelCalls: 10,
-  });
-  return embeddings;
-}
-
-export interface SimilarChunk {
-  id: string;
-  policyId: string;
-  chunkIndex: number;
-  pageStart: number;
-  pageEnd: number;
-  content: string;
-  sectionHeader: string | null;
-  tokenCount: number;
-  similarity: number;
-}
-
-/**
- * Search for policy chunks most similar to a query embedding.
- * Uses pgvector cosine distance for fast similarity search.
- */
-export async function searchSimilarChunks(
-  queryEmbedding: number[],
-  options: { limit?: number; minSimilarity?: number } = {}
-): Promise<SimilarChunk[]> {
-  const { limit = 15, minSimilarity = 0.3 } = options;
-
-  const similarity = sql<number>`1 - (${cosineDistance(policyChunks.embedding, queryEmbedding)})`;
-
-  const results = await db
+export async function getChunksForPolicy(policyId: string) {
+  return db
     .select({
-      id: policyChunks.id,
-      policyId: policyChunks.policyId,
-      chunkIndex: policyChunks.chunkIndex,
+      content: policyChunks.content,
       pageStart: policyChunks.pageStart,
       pageEnd: policyChunks.pageEnd,
-      content: policyChunks.content,
       sectionHeader: policyChunks.sectionHeader,
       tokenCount: policyChunks.tokenCount,
-      similarity,
     })
     .from(policyChunks)
-    .where(sql`1 - (${cosineDistance(policyChunks.embedding, queryEmbedding)}) > ${minSimilarity}`)
-    .orderBy(desc(similarity))
-    .limit(limit);
-
-  return results;
-}
-
-/**
- * Search for similar chunks, embedding the query text first.
- */
-export async function searchByText(
-  queryText: string,
-  options: { limit?: number; minSimilarity?: number } = {}
-): Promise<SimilarChunk[]> {
-  const embedding = await generateEmbedding(queryText);
-  return searchSimilarChunks(embedding, options);
+    .where(eq(policyChunks.policyId, policyId))
+    .orderBy(policyChunks.chunkIndex);
 }
