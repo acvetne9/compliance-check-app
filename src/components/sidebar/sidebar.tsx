@@ -49,8 +49,10 @@ interface SidebarProps {
   onSelectFolder: (folderId: string) => void;
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
+  onViewPolicyCompliance: (id: string) => void;
   onAddPolicyToFolder: (folderId: string) => void;
   onAddFolder: () => void;
+  checkedPolicyIds: Set<string>;
   activeComplianceDocId: string | null;
   onClickComplianceDoc: (id: string) => void;
   onRemoveComplianceDoc: (id: string) => void;
@@ -68,8 +70,10 @@ export function Sidebar({
   onSelectFolder,
   onClickPolicy,
   onRemovePolicy,
+  onViewPolicyCompliance,
   onAddPolicyToFolder,
   onAddFolder,
+  checkedPolicyIds,
   activeComplianceDocId,
   onClickComplianceDoc,
   onRemoveComplianceDoc,
@@ -96,7 +100,9 @@ export function Sidebar({
               onSelectPolicy={onSelectPolicy}
               onSelectFolder={onSelectFolder}
               onClickPolicy={onClickPolicy}
+              checkedPolicyIds={checkedPolicyIds}
               onRemovePolicy={onRemovePolicy}
+              onViewPolicyCompliance={onViewPolicyCompliance}
               onAddPolicyToFolder={onAddPolicyToFolder}
               onAddFolder={onAddFolder}
             />

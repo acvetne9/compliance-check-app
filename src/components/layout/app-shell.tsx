@@ -57,6 +57,7 @@ export function AppShell() {
   const [policyFolders, setPolicyFolders] = useState<PolicyFolderData[]>([]);
   const [complianceDocs, setComplianceDocs] = useState<ComplianceDocData[]>([]);
   const [pastRuns, setPastRuns] = useState<any[]>([]);
+  const [checkedPolicyIds, setCheckedPolicyIds] = useState<Set<string>>(new Set());
 
   const { status: runStatus, events, startRun, reset: resetRun } = useComplianceRun();
 
@@ -124,12 +125,42 @@ export function AppShell() {
               unclearCount: data.run.unclearCount ?? 0,
               viewMode: "full",
             });
+            // Track which policies have compliance results
+            const pIds = new Set<string>();
+            for (const req of data.requirements) {
+              for (const r of req.results ?? []) {
+                if (r.policyId) pIds.add(r.policyId);
+              }
+            }
+            setCheckedPolicyIds(pIds);
           }
         })
         .catch(() => {});
       refreshData();
     }
   }, [runStatus, activeComplianceDocId, refreshData]);
+
+  // When selecting a compliance doc, load which policies were checked
+  useEffect(() => {
+    if (!activeComplianceDocId) {
+      setCheckedPolicyIds(new Set());
+      return;
+    }
+    fetch(`/api/compliance/${activeComplianceDocId}?view=full`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.requirements) {
+          const pIds = new Set<string>();
+          for (const req of data.requirements) {
+            for (const r of req.results ?? []) {
+              if (r.policyId) pIds.add(r.policyId);
+            }
+          }
+          setCheckedPolicyIds(pIds);
+        }
+      })
+      .catch(() => setCheckedPolicyIds(new Set()));
+  }, [activeComplianceDocId]);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -316,6 +347,58 @@ export function AppShell() {
     } catch {}
   }, []);
 
+  const handleViewPolicyCompliance = useCallback(
+    async (policyId: string) => {
+      // Open PDF preview
+      let fileName = "";
+      for (const folder of policyFolders) {
+        const doc = folder.docs.find((d) => d.id === policyId);
+        if (doc) { fileName = doc.fileName; break; }
+      }
+
+      let pdfUrl: string | null = null;
+      try {
+        const res = await fetch(`/api/preview/${policyId}`);
+        if (res.ok) pdfUrl = (await res.json()).url;
+      } catch {}
+
+      setPreview({ id: policyId, fileName, docType: "policy", pdfUrl });
+
+      // Load compliance results for this policy
+      try {
+        const res = await fetch(`/api/policies/${policyId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.complianceResults?.length > 0) {
+          setResultsData({
+            documentTitle: fileName.replace(/\.pdf$/i, ""),
+            requirements: data.complianceResults.map((r: any) => ({
+              id: r.requirementId,
+              externalId: r.requirementExternalId,
+              section: r.requirementSection,
+              text: r.requirementText,
+              category: r.requirementCategory,
+              aggregatedStatus: r.status,
+              results: [{
+                policyFileName: fileName,
+                policyId,
+                status: r.status,
+                evidence: r.evidence ?? "",
+                reasoning: r.reasoning ?? "",
+                confidence: r.confidence ?? 0,
+              }],
+            })),
+            metCount: data.complianceResults.filter((r: any) => r.status === "met").length,
+            notMetCount: data.complianceResults.filter((r: any) => r.status === "not_met").length,
+            unclearCount: data.complianceResults.filter((r: any) => r.status === "unclear").length,
+            viewMode: "full",
+          });
+        }
+      } catch {}
+    },
+    [policyFolders]
+  );
+
   const handleRemovePolicy = useCallback(
     async (id: string) => {
       await fetch(`/api/policies/${id}`, { method: "DELETE" });
@@ -371,6 +454,8 @@ export function AppShell() {
           onSelectFolder={handleSelectFolder}
           onClickPolicy={handleClickPolicy}
           onRemovePolicy={handleRemovePolicy}
+          onViewPolicyCompliance={handleViewPolicyCompliance}
+          checkedPolicyIds={checkedPolicyIds}
           onAddPolicyToFolder={handleAddPolicyToFolder}
           onAddFolder={handleAddFolder}
           onClickComplianceDoc={handleClickComplianceDoc}
@@ -379,12 +464,35 @@ export function AppShell() {
           onViewRun={handleViewRun}
         />
 
-        <main className="min-w-0 flex-1 pb-24">
+        <main className="min-w-0 flex-1 overflow-y-auto pb-24">
           {mainView === "running" && (
             <ProgressOverlay events={events} isRunning={runStatus === "running"} />
           )}
 
-          {mainView === "results" && resultsData && (
+          {/* When both preview and results are set (policy compliance view), show both */}
+          {preview && resultsData && mainView !== "running" && (
+            <>
+              <div className="h-[40vh] min-h-[300px] shrink-0">
+                <PdfPreview
+                  fileName={preview.fileName}
+                  pdfUrl={preview.pdfUrl}
+                  docType={preview.docType}
+                  onClose={() => { setPreview(null); setResultsData(null); }}
+                />
+              </div>
+              <ComplianceResults
+                documentTitle={resultsData.documentTitle}
+                requirements={resultsData.requirements}
+                metCount={resultsData.metCount}
+                notMetCount={resultsData.notMetCount}
+                unclearCount={resultsData.unclearCount}
+                viewMode={resultsData.viewMode}
+              />
+            </>
+          )}
+
+          {/* Results only (no preview) */}
+          {!preview && resultsData && mainView === "results" && (
             <ComplianceResults
               documentTitle={resultsData.documentTitle}
               requirements={resultsData.requirements}
@@ -395,7 +503,8 @@ export function AppShell() {
             />
           )}
 
-          {mainView === "preview" && preview && (
+          {/* Preview only (no results) */}
+          {preview && !resultsData && mainView === "preview" && (
             <PdfPreview
               fileName={preview.fileName}
               pdfUrl={preview.pdfUrl}

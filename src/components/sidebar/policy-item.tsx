@@ -1,29 +1,28 @@
 "use client";
 
-import { FileText, X } from "lucide-react";
+import { FileText, X, ShieldCheck } from "lucide-react";
 
 interface PolicyItemProps {
   id: string;
   fileName: string;
   selected?: boolean;
-  hasResults?: boolean;
-  status?: "met" | "not_met" | "unclear" | null;
+  hasComplianceResults?: boolean;
   onSelect?: (id: string) => void;
   onClick?: (id: string) => void;
   onRemove?: (id: string) => void;
+  onViewCompliance?: (id: string) => void;
 }
 
 export function PolicyItem({
   id,
   fileName,
   selected = false,
-  hasResults = false,
-  status = null,
+  hasComplianceResults = false,
   onSelect,
   onClick,
   onRemove,
+  onViewCompliance,
 }: PolicyItemProps) {
-  // Truncate filename to fit sidebar
   const displayName = fileName
     .replace(/\.pdf$/i, "")
     .replace(/_/g, " ")
@@ -48,15 +47,20 @@ export function PolicyItem({
         <span className="truncate text-[11px] text-sidebar-foreground/70">
           {displayName}
         </span>
-
-        {hasResults && status && (
-          <span className="shrink-0 text-[10px]">
-            {status === "met" && "✅"}
-            {status === "not_met" && "❌"}
-            {status === "unclear" && "⚠️"}
-          </span>
-        )}
       </button>
+
+      {hasComplianceResults && onViewCompliance && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewCompliance(id);
+          }}
+          className="shrink-0 rounded p-0.5 text-primary/50 transition-colors hover:text-primary"
+          title="View compliance results"
+        >
+          <ShieldCheck className="size-3" />
+        </button>
+      )}
 
       {onRemove && (
         <button

@@ -19,11 +19,13 @@ interface PolicyFolderData {
 interface PolicyBrowserProps {
   folders: PolicyFolderData[];
   selectedIds: Set<string>;
+  checkedPolicyIds: Set<string>;
   searchFilter: string;
   onSelectPolicy: (id: string) => void;
   onSelectFolder: (folderId: string) => void;
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
+  onViewPolicyCompliance: (id: string) => void;
   onAddPolicyToFolder: (folderId: string) => void;
   onAddFolder: () => void;
 }
@@ -31,11 +33,13 @@ interface PolicyBrowserProps {
 export function PolicyBrowser({
   folders,
   selectedIds,
+  checkedPolicyIds,
   searchFilter,
   onSelectPolicy,
   onSelectFolder,
   onClickPolicy,
   onRemovePolicy,
+  onViewPolicyCompliance,
   onAddPolicyToFolder,
   onAddFolder,
 }: PolicyBrowserProps) {
@@ -91,11 +95,11 @@ export function PolicyBrowser({
                     id={doc.id}
                     fileName={doc.fileName}
                     selected={selectedIds.has(doc.id)}
-                    hasResults={doc.status != null}
-                    status={doc.status}
+                    hasComplianceResults={checkedPolicyIds.has(doc.id)}
                     onSelect={onSelectPolicy}
                     onClick={onClickPolicy}
                     onRemove={onRemovePolicy}
+                    onViewCompliance={onViewPolicyCompliance}
                   />
                 ))}
                 <button
