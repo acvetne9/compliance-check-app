@@ -46,7 +46,7 @@ interface ResultsState {
   viewMode: "full" | "gaps";
 }
 
-type MainView = "empty" | "preview" | "running" | "results";
+type MainView = "empty" | "preview" | "running" | "results" | "preview+results";
 
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -66,9 +66,11 @@ export function AppShell() {
   const mainView: MainView =
     runStatus === "running" || runStatus === "starting"
       ? "running"
-      : resultsData
-        ? "results"
-        : preview
+      : preview && resultsData
+        ? "preview+results"
+        : resultsData
+          ? "results"
+          : preview
           ? "preview"
           : "empty";
 
@@ -285,15 +287,53 @@ export function AppShell() {
   );
 
   const handleClickPolicy = useCallback(
-    (id: string) => {
-      // If clicking the same policy that's previewed, close it
+    async (id: string) => {
+      // Toggle off if already previewing
       if (preview?.id === id) {
         setPreview(null);
+        setResultsData(null);
         return;
       }
-      openPreview(id, "policy");
+
+      // Open preview
+      await openPreview(id, "policy");
+
+      // If this policy has compliance results, load them too
+      if (checkedPolicyIds.has(id)) {
+        try {
+          const res = await fetch(`/api/policies/${id}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.complianceResults?.length > 0) {
+            const fileName = data.policy?.fileName ?? "";
+            setResultsData({
+              documentTitle: fileName.replace(/\.pdf$/i, ""),
+              requirements: data.complianceResults.map((r: any) => ({
+                id: r.requirementId,
+                externalId: r.requirementExternalId,
+                section: r.requirementSection,
+                text: r.requirementText,
+                category: r.requirementCategory,
+                aggregatedStatus: r.status,
+                results: [{
+                  policyFileName: fileName,
+                  policyId: id,
+                  status: r.status,
+                  evidence: r.evidence ?? "",
+                  reasoning: r.reasoning ?? "",
+                  confidence: r.confidence ?? 0,
+                }],
+              })),
+              metCount: data.complianceResults.filter((r: any) => r.status === "met").length,
+              notMetCount: data.complianceResults.filter((r: any) => r.status === "not_met").length,
+              unclearCount: data.complianceResults.filter((r: any) => r.status === "unclear").length,
+              viewMode: "full",
+            });
+          }
+        } catch {}
+      }
     },
-    [openPreview, preview]
+    [openPreview, preview, checkedPolicyIds]
   );
 
   const handleClickComplianceDoc = useCallback(
@@ -495,6 +535,27 @@ export function AppShell() {
         <main className="min-w-0 flex-1 overflow-y-auto pb-24">
           {mainView === "running" && (
             <ProgressOverlay events={events} isRunning={runStatus === "running"} />
+          )}
+
+          {mainView === "preview+results" && preview && resultsData && (
+            <>
+              <div className="h-[40vh] min-h-[250px] shrink-0 border-b border-border/40">
+                <PdfPreview
+                  fileName={preview.fileName}
+                  pdfUrl={preview.pdfUrl}
+                  docType={preview.docType}
+                  onClose={() => { setPreview(null); setResultsData(null); }}
+                />
+              </div>
+              <ComplianceResults
+                documentTitle={resultsData.documentTitle}
+                requirements={resultsData.requirements}
+                metCount={resultsData.metCount}
+                notMetCount={resultsData.notMetCount}
+                unclearCount={resultsData.unclearCount}
+                viewMode={resultsData.viewMode}
+              />
+            </>
           )}
 
           {mainView === "results" && resultsData && (
