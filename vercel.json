@@ -8,9 +8,6 @@
     },
     "src/app/api/ingest/bulk/route.ts": {
       "maxDuration": 300
-    },
-    "src/app/workflow/**": {
-      "maxDuration": 800
     }
   }
 }
