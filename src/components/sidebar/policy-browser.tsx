@@ -21,6 +21,7 @@ interface PolicyBrowserProps {
   selectedIds: Set<string>;
   searchFilter: string;
   onSelectPolicy: (id: string) => void;
+  onSelectFolder: (folderId: string) => void;
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
   onAddPolicy: () => void;
@@ -31,6 +32,7 @@ export function PolicyBrowser({
   selectedIds,
   searchFilter,
   onSelectPolicy,
+  onSelectFolder,
   onClickPolicy,
   onRemovePolicy,
   onAddPolicy,
@@ -61,27 +63,42 @@ export function PolicyBrowser({
             {searchFilter ? "No matching policies" : "No policies ingested yet"}
           </p>
         ) : (
-          filteredFolders.map((folder) => (
-            <PolicyFolder
-              key={folder.folderId}
-              folderId={folder.folderId}
-              docCount={folder.docs.length}
-            >
-              {folder.docs.map((doc) => (
-                <PolicyItem
-                  key={doc.id}
-                  id={doc.id}
-                  fileName={doc.fileName}
-                  selected={selectedIds.has(doc.id)}
-                  hasResults={doc.status != null}
-                  status={doc.status}
-                  onSelect={onSelectPolicy}
-                  onClick={onClickPolicy}
-                  onRemove={onRemovePolicy}
-                />
-              ))}
-            </PolicyFolder>
-          ))
+          filteredFolders.map((folder) => {
+            const folderDocIds = folder.docs.map((d) => d.id);
+            const selectedCount = folderDocIds.filter((id) =>
+              selectedIds.has(id)
+            ).length;
+            const folderSelected: "all" | "some" | "none" =
+              selectedCount === 0
+                ? "none"
+                : selectedCount === folderDocIds.length
+                  ? "all"
+                  : "some";
+
+            return (
+              <PolicyFolder
+                key={folder.folderId}
+                folderId={folder.folderId}
+                docCount={folder.docs.length}
+                selected={folderSelected}
+                onSelectFolder={onSelectFolder}
+              >
+                {folder.docs.map((doc) => (
+                  <PolicyItem
+                    key={doc.id}
+                    id={doc.id}
+                    fileName={doc.fileName}
+                    selected={selectedIds.has(doc.id)}
+                    hasResults={doc.status != null}
+                    status={doc.status}
+                    onSelect={onSelectPolicy}
+                    onClick={onClickPolicy}
+                    onRemove={onRemovePolicy}
+                  />
+                ))}
+              </PolicyFolder>
+            );
+          })
         )}
       </div>
 

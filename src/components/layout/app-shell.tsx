@@ -91,6 +91,27 @@ export function AppShell() {
     });
   }, []);
 
+  const handleSelectFolder = useCallback(
+    (folderId: string) => {
+      const folder = policyFolders.find((f) => f.folderId === folderId);
+      if (!folder) return;
+      const folderDocIds = folder.docs.map((d) => d.id);
+      setSelectedPolicies((prev) => {
+        const next = new Set(prev);
+        const allSelected = folderDocIds.every((id) => next.has(id));
+        if (allSelected) {
+          // Deselect all in folder
+          for (const id of folderDocIds) next.delete(id);
+        } else {
+          // Select all in folder
+          for (const id of folderDocIds) next.add(id);
+        }
+        return next;
+      });
+    },
+    [policyFolders]
+  );
+
   const openPreview = useCallback(
     async (id: string, docType: "policy" | "compliance") => {
       let fileName = "";
@@ -155,6 +176,7 @@ export function AppShell() {
           complianceDocs={complianceDocs}
           selectedPolicyIds={selectedPolicies}
           onSelectPolicy={handleSelectPolicy}
+          onSelectFolder={handleSelectFolder}
           onClickPolicy={handleClickPolicy}
           onRemovePolicy={handleRemovePolicy}
           onAddPolicy={handleAddPolicy}
