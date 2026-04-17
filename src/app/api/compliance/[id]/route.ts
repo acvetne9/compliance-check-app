@@ -7,7 +7,7 @@ import {
   complianceResults,
   policies,
 } from "@/lib/db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import { deletePdf } from "@/lib/blob";
 
 /**
@@ -35,12 +35,17 @@ export async function GET(
     );
   }
 
-  // Get latest run
+  // Get latest completed run (skip failed/pending ones)
   const [latestRun] = await db
     .select()
     .from(complianceRuns)
-    .where(eq(complianceRuns.complianceDocId, id))
-    .orderBy(desc(complianceRuns.startedAt))
+    .where(
+      and(
+        eq(complianceRuns.complianceDocId, id),
+        eq(complianceRuns.status, "completed")
+      )
+    )
+    .orderBy(desc(complianceRuns.completedAt))
     .limit(1);
 
   if (!latestRun) {

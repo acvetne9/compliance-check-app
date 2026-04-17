@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { complianceRuns, complianceDocs } from "@/lib/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 
 /**
  * GET /api/runs
- * List all compliance runs with their associated doc name and stats.
+ * List completed compliance runs.
  */
 export async function GET() {
   const runs = await db
@@ -23,7 +23,8 @@ export async function GET() {
     })
     .from(complianceRuns)
     .innerJoin(complianceDocs, eq(complianceRuns.complianceDocId, complianceDocs.id))
-    .orderBy(desc(complianceRuns.startedAt));
+    .where(eq(complianceRuns.status, "completed"))
+    .orderBy(desc(complianceRuns.completedAt));
 
   return NextResponse.json({ runs });
 }

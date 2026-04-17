@@ -299,12 +299,7 @@ export function AppShell() {
 
   const handleViewRun = useCallback(async (runId: string, docFileName: string) => {
     try {
-      // Find the compliance doc ID from the run
-      const run = pastRuns.find((r: any) => r.id === runId);
-      const docId = run?.complianceDocId;
-      if (!docId) return;
-
-      const res = await fetch(`/api/compliance/${docId}?view=full`);
+      const res = await fetch(`/api/runs/${runId}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.run && data.requirements) {
@@ -319,7 +314,7 @@ export function AppShell() {
         });
       }
     } catch {}
-  }, [pastRuns]);
+  }, []);
 
   const handleRemovePolicy = useCallback(
     async (id: string) => {
