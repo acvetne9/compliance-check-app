@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Download } from "lucide-react";
+import { Download, X } from "lucide-react";
 
 interface RunData {
   id: string;
@@ -17,38 +17,24 @@ interface RunsListProps {
   runs: RunData[];
   activeRunId: string | null;
   onClickRun: (runId: string, docFileName: string) => void;
+  onRemoveRun: (runId: string) => void;
 }
 
-export function RunsList({ runs, activeRunId, onClickRun }: RunsListProps) {
+export function RunsList({ runs, activeRunId, onClickRun, onRemoveRun }: RunsListProps) {
   const completedRuns = runs.filter((r) => r.status === "completed");
 
   if (completedRuns.length === 0) {
     return (
-      <div>
-        <div className="flex items-center gap-2 px-2 pt-5 pb-1.5">
-          <ClipboardCheck className="size-3.5 text-primary/60" />
-          <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Past Runs
-          </span>
-        </div>
-        <div className="px-1">
-          <p className="px-2 py-2 text-xs text-muted-foreground/50">
-            No completed runs yet
-          </p>
-        </div>
+      <div className="px-1">
+        <p className="px-2 py-2 text-xs text-muted-foreground/50">
+          No completed runs yet
+        </p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center gap-2 px-2 pt-5 pb-1.5">
-        <ClipboardCheck className="size-3.5 text-primary/60" />
-        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Past Runs
-        </span>
-      </div>
-
       <div className="flex flex-col gap-0.5 px-1">
         {completedRuns.map((run) => {
           const total =
@@ -89,14 +75,26 @@ export function RunsList({ runs, activeRunId, onClickRun }: RunsListProps) {
                 </div>
               </button>
 
-              <a
-                href={`/api/runs/${run.id}/export?format=csv`}
-                download
-                className="shrink-0 rounded p-1 text-muted-foreground/30 opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
-                title="Download CSV"
-              >
-                <Download className="size-3" />
-              </a>
+              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                <a
+                  href={`/api/runs/${run.id}/export?format=csv`}
+                  download
+                  className="rounded p-1 text-muted-foreground/30 hover:bg-secondary hover:text-foreground"
+                  title="Download CSV"
+                >
+                  <Download className="size-2.5" />
+                </a>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveRun(run.id);
+                  }}
+                  className="rounded p-0.5 text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive"
+                  title="Delete run"
+                >
+                  <X className="size-2.5" />
+                </button>
+              </div>
             </div>
           );
         })}

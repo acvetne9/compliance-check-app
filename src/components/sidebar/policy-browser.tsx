@@ -54,13 +54,6 @@ export function PolicyBrowser({
 
   return (
     <div>
-      <div className="flex items-center gap-2 px-2 pt-3 pb-1.5">
-        <FolderClosed className="size-3.5 text-primary/60" />
-        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Policies
-        </span>
-      </div>
-
       <div className="flex flex-col gap-0.5 px-1">
         {filteredFolders.length === 0 ? (
           <p className="px-2 py-2 text-xs text-muted-foreground/50">

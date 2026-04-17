@@ -340,6 +340,7 @@ export function AppShell() {
     (id: string) => {
       const deselecting = activeComplianceDocId === id;
       setActiveComplianceDocId(deselecting ? null : id);
+      setActiveRunId(null); // deselect any active run
       if (deselecting) {
         setPreview(null);
         setResultsData(null);
@@ -388,6 +389,7 @@ export function AppShell() {
   const handleViewRun = useCallback(async (runId: string, docFileName: string) => {
     const deselecting = activeRunId === runId;
     setActiveRunId(deselecting ? null : runId);
+    setActiveComplianceDocId(null); // deselect any active compliance doc
 
     if (deselecting) {
       setPreview(null);
@@ -487,20 +489,62 @@ export function AppShell() {
     [activeComplianceDocId, refreshData]
   );
 
+  const handleRemoveRun = useCallback(
+    async (runId: string) => {
+      await fetch(`/api/runs/${runId}`, { method: "DELETE" }).catch(() => {});
+      if (activeRunId === runId) {
+        setActiveRunId(null);
+        setResultsData(null);
+        setCheckedPolicyIds(new Set());
+      }
+      refreshData();
+    },
+    [activeRunId, refreshData]
+  );
+
   const handleAddPolicyToFolder = useCallback((folderId: string) => {
-    // TODO: open file picker, upload, ingest to folder
-    console.log("Add policy to folder:", folderId);
-  }, []);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".pdf";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "policy");
+      formData.append("folderId", folderId);
+      await fetch("/api/upload", { method: "POST", body: formData });
+      refreshData();
+    };
+    input.click();
+  }, [refreshData]);
 
   const handleAddFolder = useCallback(() => {
-    // TODO: prompt for folder name, create folder
-    console.log("Add folder");
+    const name = window.prompt("Enter folder name:");
+    if (!name?.trim()) return;
+    // Folders are created implicitly when a policy is added to them
+    // For now just show it in the UI
+    setPolicyFolders((prev) => [
+      ...prev,
+      { folderId: name.trim().toUpperCase(), docCount: 0, docs: [] },
+    ]);
   }, []);
 
   const handleAddComplianceDoc = useCallback(() => {
-    // TODO: open file picker, upload compliance doc
-    console.log("Add compliance doc");
-  }, []);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".pdf";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "compliance");
+      await fetch("/api/upload", { method: "POST", body: formData });
+      refreshData();
+    };
+    input.click();
+  }, [refreshData]);
 
   return (
     <div className="relative flex h-full flex-col bg-background">
@@ -530,6 +574,7 @@ export function AppShell() {
           onAddComplianceDoc={handleAddComplianceDoc}
           activeRunId={activeRunId}
           onClickRun={handleViewRun}
+          onRemoveRun={handleRemoveRun}
         />
 
         <main className="min-w-0 flex-1 overflow-y-auto pb-24">

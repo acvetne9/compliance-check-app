@@ -1,10 +1,12 @@
 "use client";
 
+import { FolderClosed, ShieldCheck, ClipboardCheck } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SearchBar } from "./search-bar";
 import { PolicyBrowser } from "./policy-browser";
 import { ComplianceList } from "./compliance-list";
 import { RunsList } from "./runs-list";
+import { CollapsibleSection } from "./section-header";
 import { useState } from "react";
 
 interface PolicyDoc {
@@ -58,6 +60,7 @@ interface SidebarProps {
   onAddComplianceDoc: () => void;
   activeRunId: string | null;
   onClickRun: (runId: string, docFileName: string) => void;
+  onRemoveRun: (runId: string) => void;
 }
 
 export function Sidebar({
@@ -79,6 +82,7 @@ export function Sidebar({
   onAddComplianceDoc,
   activeRunId,
   onClickRun,
+  onRemoveRun,
 }: SidebarProps) {
   const [search, setSearch] = useState("");
 
@@ -93,29 +97,49 @@ export function Sidebar({
 
         <ScrollArea className="flex-1 overflow-y-auto [&_[data-slot=scroll-area-scrollbar]]:data-[state=hidden]:opacity-0">
           <div className="flex flex-col pb-4">
-            <PolicyBrowser
-              folders={policyFolders}
-              selectedIds={selectedPolicyIds}
-              searchFilter={search}
-              onSelectPolicy={onSelectPolicy}
-              onSelectFolder={onSelectFolder}
-              onClickPolicy={onClickPolicy}
-              checkedPolicyIds={checkedPolicyIds}
-              onRemovePolicy={onRemovePolicy}
-              onAddPolicyToFolder={onAddPolicyToFolder}
-              onAddFolder={onAddFolder}
-            />
+            <CollapsibleSection
+              icon={<FolderClosed className="size-3.5 text-primary/60" />}
+              label="Policies"
+            >
+              <PolicyBrowser
+                folders={policyFolders}
+                selectedIds={selectedPolicyIds}
+                checkedPolicyIds={checkedPolicyIds}
+                searchFilter={search}
+                onSelectPolicy={onSelectPolicy}
+                onSelectFolder={onSelectFolder}
+                onClickPolicy={onClickPolicy}
+                onRemovePolicy={onRemovePolicy}
+                onAddPolicyToFolder={onAddPolicyToFolder}
+                onAddFolder={onAddFolder}
+              />
+            </CollapsibleSection>
 
-            <ComplianceList
-              docs={complianceDocs}
-              activeDocId={activeComplianceDocId}
-              searchFilter={search}
-              onClickDoc={onClickComplianceDoc}
-              onRemoveDoc={onRemoveComplianceDoc}
-              onAddDoc={onAddComplianceDoc}
-            />
+            <CollapsibleSection
+              icon={<ShieldCheck className="size-3.5 text-primary" />}
+              label="Compliance"
+            >
+              <ComplianceList
+                docs={complianceDocs}
+                activeDocId={activeComplianceDocId}
+                searchFilter={search}
+                onClickDoc={onClickComplianceDoc}
+                onRemoveDoc={onRemoveComplianceDoc}
+                onAddDoc={onAddComplianceDoc}
+              />
+            </CollapsibleSection>
 
-            <RunsList runs={pastRuns} activeRunId={activeRunId} onClickRun={onClickRun} />
+            <CollapsibleSection
+              icon={<ClipboardCheck className="size-3.5 text-primary/60" />}
+              label="Past Runs"
+            >
+              <RunsList
+                runs={pastRuns}
+                activeRunId={activeRunId}
+                onClickRun={onClickRun}
+                onRemoveRun={onRemoveRun}
+              />
+            </CollapsibleSection>
           </div>
         </ScrollArea>
       </div>

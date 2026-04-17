@@ -68,3 +68,20 @@ export async function GET(
     requirements: requirementsWithResults,
   });
 }
+
+/**
+ * DELETE /api/runs/[runId]
+ * Delete a compliance run and its results.
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ runId: string }> }
+) {
+  const { runId } = await params;
+
+  await db.delete(complianceResults).where(eq(complianceResults.complianceRunId, runId));
+  await db.delete(requirements).where(eq(requirements.complianceRunId, runId));
+  await db.delete(complianceRuns).where(eq(complianceRuns.id, runId));
+
+  return NextResponse.json({ deleted: true });
+}
