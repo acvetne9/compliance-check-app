@@ -285,16 +285,30 @@ export function AppShell() {
   );
 
   const handleClickPolicy = useCallback(
-    (id: string) => openPreview(id, "policy"),
-    [openPreview]
+    (id: string) => {
+      // If clicking the same policy that's previewed, close it
+      if (preview?.id === id) {
+        setPreview(null);
+        return;
+      }
+      openPreview(id, "policy");
+    },
+    [openPreview, preview]
   );
 
   const handleClickComplianceDoc = useCallback(
     (id: string) => {
-      setActiveComplianceDocId((prev) => (prev === id ? null : id));
-      openPreview(id, "compliance");
+      const deselecting = activeComplianceDocId === id;
+      setActiveComplianceDocId(deselecting ? null : id);
+      if (deselecting) {
+        setPreview(null);
+        setResultsData(null);
+        setCheckedPolicyIds(new Set());
+      } else {
+        openPreview(id, "compliance");
+      }
     },
-    [openPreview]
+    [openPreview, activeComplianceDocId]
   );
 
   // View cached results for a policy
@@ -332,7 +346,15 @@ export function AppShell() {
   }, []);
 
   const handleViewRun = useCallback(async (runId: string, docFileName: string) => {
-    setActiveRunId((prev) => (prev === runId ? null : runId));
+    const deselecting = activeRunId === runId;
+    setActiveRunId(deselecting ? null : runId);
+
+    if (deselecting) {
+      setPreview(null);
+      setResultsData(null);
+      setCheckedPolicyIds(new Set());
+      return;
+    }
 
     try {
       const res = await fetch(`/api/runs/${runId}`);
