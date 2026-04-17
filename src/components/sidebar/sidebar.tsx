@@ -56,7 +56,8 @@ interface SidebarProps {
   onClickComplianceDoc: (id: string) => void;
   onRemoveComplianceDoc: (id: string) => void;
   onAddComplianceDoc: () => void;
-  onViewRun: (runId: string, docFileName: string) => void;
+  activeRunId: string | null;
+  onClickRun: (runId: string, docFileName: string) => void;
 }
 
 export function Sidebar({
@@ -76,7 +77,8 @@ export function Sidebar({
   onClickComplianceDoc,
   onRemoveComplianceDoc,
   onAddComplianceDoc,
-  onViewRun,
+  activeRunId,
+  onClickRun,
 }: SidebarProps) {
   const [search, setSearch] = useState("");
 
@@ -113,7 +115,7 @@ export function Sidebar({
               onAddDoc={onAddComplianceDoc}
             />
 
-            <RunsList runs={pastRuns} onViewRun={onViewRun} />
+            <RunsList runs={pastRuns} activeRunId={activeRunId} onClickRun={onClickRun} />
           </div>
         </ScrollArea>
       </div>

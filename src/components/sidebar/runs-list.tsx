@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Download, Eye } from "lucide-react";
+import { ClipboardCheck, Download } from "lucide-react";
 
 interface RunData {
   id: string;
@@ -15,10 +15,11 @@ interface RunData {
 
 interface RunsListProps {
   runs: RunData[];
-  onViewRun: (runId: string, complianceDocId: string) => void;
+  activeRunId: string | null;
+  onClickRun: (runId: string, docFileName: string) => void;
 }
 
-export function RunsList({ runs, onViewRun }: RunsListProps) {
+export function RunsList({ runs, activeRunId, onClickRun }: RunsListProps) {
   const completedRuns = runs.filter((r) => r.status === "completed");
 
   if (completedRuns.length === 0) {
@@ -60,45 +61,42 @@ export function RunsList({ runs, onViewRun }: RunsListProps) {
                 day: "numeric",
               })
             : "";
+          const isActive = run.id === activeRunId;
 
           return (
             <div
               key={run.id}
-              className="group flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors hover:bg-sidebar-accent"
+              className={`group flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors ${
+                isActive
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-sidebar-accent"
+              }`}
             >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] text-sidebar-foreground/70">
+              <button
+                onClick={() => onClickRun(run.id, run.docFileName)}
+                className="min-w-0 flex-1 text-left"
+              >
+                <p className={`truncate text-[11px] ${isActive ? "text-primary" : "text-sidebar-foreground/70"}`}>
                   {run.docFileName.replace(/\.pdf$/i, "")}
                 </p>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/50">
+                <div className={`flex items-center gap-2 text-[10px] ${isActive ? "text-primary/60" : "text-muted-foreground/50"}`}>
                   <span>{date}</span>
                   {total > 0 && (
-                    <>
-                      <span>
-                        {run.metCount ?? 0}/{total} met
-                      </span>
-                    </>
+                    <span>
+                      {run.metCount ?? 0}/{total} met
+                    </span>
                   )}
                 </div>
-              </div>
+              </button>
 
-              <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  onClick={() => onViewRun(run.id, run.docFileName)}
-                  className="rounded p-1 text-muted-foreground/50 hover:bg-secondary hover:text-foreground"
-                  title="View results"
-                >
-                  <Eye className="size-3" />
-                </button>
-                <a
-                  href={`/api/runs/${run.id}/export?format=csv`}
-                  download
-                  className="rounded p-1 text-muted-foreground/50 hover:bg-secondary hover:text-foreground"
-                  title="Download CSV"
-                >
-                  <Download className="size-3" />
-                </a>
-              </div>
+              <a
+                href={`/api/runs/${run.id}/export?format=csv`}
+                download
+                className="shrink-0 rounded p-1 text-muted-foreground/30 opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+                title="Download CSV"
+              >
+                <Download className="size-3" />
+              </a>
             </div>
           );
         })}

@@ -1,12 +1,12 @@
 "use client";
 
-import { FileText, X, ShieldCheck } from "lucide-react";
+import { FileText, X } from "lucide-react";
 
 interface PolicyItemProps {
   id: string;
   fileName: string;
   selected?: boolean;
-  hasComplianceResults?: boolean;
+  highlighted?: boolean;
   onSelect?: (id: string) => void;
   onClick?: (id: string) => void;
   onRemove?: (id: string) => void;
@@ -16,7 +16,7 @@ export function PolicyItem({
   id,
   fileName,
   selected = false,
-  hasComplianceResults = false,
+  highlighted = false,
   onSelect,
   onClick,
   onRemove,
@@ -27,7 +27,11 @@ export function PolicyItem({
     .slice(0, 24);
 
   return (
-    <div className="group flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-sidebar-accent">
+    <div className={`group flex items-center gap-1 rounded-md px-1.5 py-1 transition-colors ${
+      highlighted
+        ? "bg-primary/8 text-primary"
+        : "hover:bg-sidebar-accent"
+    }`}>
       {onSelect && (
         <input
           type="checkbox"
@@ -41,15 +45,11 @@ export function PolicyItem({
         onClick={() => onClick?.(id)}
         className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
       >
-        <FileText className="size-3 shrink-0 text-muted-foreground/40" />
-        <span className="truncate text-[11px] text-sidebar-foreground/70">
+        <FileText className={`size-3 shrink-0 ${highlighted ? "text-primary/60" : "text-muted-foreground/40"}`} />
+        <span className={`truncate text-[11px] ${highlighted ? "text-primary" : "text-sidebar-foreground/70"}`}>
           {displayName}
         </span>
       </button>
-
-      {hasComplianceResults && (
-        <ShieldCheck className="size-3 shrink-0 text-primary/50" />
-      )}
 
       {onRemove && (
         <button

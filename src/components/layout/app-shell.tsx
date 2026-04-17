@@ -58,6 +58,7 @@ export function AppShell() {
   const [complianceDocs, setComplianceDocs] = useState<ComplianceDocData[]>([]);
   const [pastRuns, setPastRuns] = useState<any[]>([]);
   const [checkedPolicyIds, setCheckedPolicyIds] = useState<Set<string>>(new Set());
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
 
   const { status: runStatus, events, startRun, reset: resetRun } = useComplianceRun();
 
@@ -169,6 +170,8 @@ export function AppShell() {
   const handleNewRun = useCallback(() => {
     setSelectedPolicies(new Set());
     setActiveComplianceDocId(null);
+    setActiveRunId(null);
+    setCheckedPolicyIds(new Set());
     setPreview(null);
     setResultsData(null);
     resetRun();
@@ -329,6 +332,8 @@ export function AppShell() {
   }, []);
 
   const handleViewRun = useCallback(async (runId: string, docFileName: string) => {
+    setActiveRunId((prev) => (prev === runId ? null : runId));
+
     try {
       const res = await fetch(`/api/runs/${runId}`);
       if (!res.ok) return;
@@ -343,6 +348,14 @@ export function AppShell() {
           unclearCount: data.run.unclearCount ?? 0,
           viewMode: "full",
         });
+        // Highlight policies that were checked in this run
+        const pIds = new Set<string>();
+        for (const req of data.requirements) {
+          for (const r of req.results ?? []) {
+            if (r.policyId) pIds.add(r.policyId);
+          }
+        }
+        setCheckedPolicyIds(pIds);
       }
     } catch {}
   }, []);
@@ -460,7 +473,8 @@ export function AppShell() {
           onClickComplianceDoc={handleClickComplianceDoc}
           onRemoveComplianceDoc={handleRemoveComplianceDoc}
           onAddComplianceDoc={handleAddComplianceDoc}
-          onViewRun={handleViewRun}
+          activeRunId={activeRunId}
+          onClickRun={handleViewRun}
         />
 
         <main className="min-w-0 flex-1 overflow-y-auto pb-24">

@@ -178,6 +178,9 @@ export function BottomBar({
         <p className="mt-2 px-1 text-center text-xs text-muted-foreground/70">
           {helperText}
         </p>
+        <p className="mt-1 px-1 text-center text-[11px] text-muted-foreground/40">
+          Select a document or past run from the sidebar to view compliance status.
+        </p>
       </div>
     </div>
   );

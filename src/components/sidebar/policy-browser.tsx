@@ -93,7 +93,7 @@ export function PolicyBrowser({
                     id={doc.id}
                     fileName={doc.fileName}
                     selected={selectedIds.has(doc.id)}
-                    hasComplianceResults={checkedPolicyIds.has(doc.id)}
+                    highlighted={checkedPolicyIds.has(doc.id)}
                     onSelect={onSelectPolicy}
                     onClick={onClickPolicy}
                     onRemove={onRemovePolicy}
