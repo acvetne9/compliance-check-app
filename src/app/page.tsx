@@ -1,7 +1,5 @@
+import { AppShell } from "@/components/layout/app-shell";
+
 export default function Home() {
-  return (
-    <div className="flex h-full items-center justify-center">
-      <p className="text-muted-foreground">AndreasGPT</p>
-    </div>
-  );
+  return <AppShell />;
 }
