@@ -36,8 +36,8 @@ export function AppShell() {
         <main className="min-w-0 flex-1" />
       </div>
 
-      {/* Welcome state — centered on full page */}
-      <div className="pointer-events-none fixed inset-0 flex items-center justify-center p-8">
+      {/* Welcome state — centered horizontally, 1/3 from top */}
+      <div className="pointer-events-none fixed inset-0 flex items-start justify-center px-8 pt-[25vh]">
         <div className="pointer-events-auto flex max-w-md flex-col items-center gap-6 text-center">
           <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/8 ring-1 ring-primary/10">
             <ShieldCheck className="size-7 text-primary" strokeWidth={1.5} />
