@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { SearchBar } from "./search-bar";
 import { PolicyBrowser } from "./policy-browser";
 import { ComplianceList } from "./compliance-list";
+import { RunsList } from "./runs-list";
 import { useState } from "react";
 
 interface PolicyDoc {
@@ -27,10 +28,22 @@ interface ComplianceDoc {
   unclearCount?: number;
 }
 
+interface RunData {
+  id: string;
+  status: string;
+  docFileName: string;
+  requirementsCount: number | null;
+  metCount: number | null;
+  notMetCount: number | null;
+  unclearCount: number | null;
+  completedAt: string | null;
+}
+
 interface SidebarProps {
   open: boolean;
   policyFolders: PolicyFolderData[];
   complianceDocs: ComplianceDoc[];
+  pastRuns: RunData[];
   selectedPolicyIds: Set<string>;
   onSelectPolicy: (id: string) => void;
   onSelectFolder: (folderId: string) => void;
@@ -40,12 +53,14 @@ interface SidebarProps {
   activeComplianceDocId: string | null;
   onClickComplianceDoc: (id: string) => void;
   onAddComplianceDoc: () => void;
+  onViewRun: (runId: string, docFileName: string) => void;
 }
 
 export function Sidebar({
   open,
   policyFolders,
   complianceDocs,
+  pastRuns,
   selectedPolicyIds,
   onSelectPolicy,
   onSelectFolder,
@@ -55,6 +70,7 @@ export function Sidebar({
   activeComplianceDocId,
   onClickComplianceDoc,
   onAddComplianceDoc,
+  onViewRun,
 }: SidebarProps) {
   const [search, setSearch] = useState("");
 
@@ -87,6 +103,8 @@ export function Sidebar({
               onClickDoc={onClickComplianceDoc}
               onAddDoc={onAddComplianceDoc}
             />
+
+            <RunsList runs={pastRuns} onViewRun={onViewRun} />
           </div>
         </ScrollArea>
       </div>

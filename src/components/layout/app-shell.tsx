@@ -56,6 +56,7 @@ export function AppShell() {
   const [resultsData, setResultsData] = useState<ResultsState | null>(null);
   const [policyFolders, setPolicyFolders] = useState<PolicyFolderData[]>([]);
   const [complianceDocs, setComplianceDocs] = useState<ComplianceDocData[]>([]);
+  const [pastRuns, setPastRuns] = useState<any[]>([]);
 
   const { status: runStatus, events, startRun, reset: resetRun } = useComplianceRun();
 
@@ -93,6 +94,13 @@ export function AppShell() {
             }))
           );
         }
+      })
+      .catch(() => {});
+
+    fetch("/api/runs")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.runs) setPastRuns(data.runs);
       })
       .catch(() => {});
   }, []);
@@ -289,6 +297,30 @@ export function AppShell() {
     } catch {}
   }, []);
 
+  const handleViewRun = useCallback(async (runId: string, docFileName: string) => {
+    try {
+      // Find the compliance doc ID from the run
+      const run = pastRuns.find((r: any) => r.id === runId);
+      const docId = run?.complianceDocId;
+      if (!docId) return;
+
+      const res = await fetch(`/api/compliance/${docId}?view=full`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.run && data.requirements) {
+        setPreview(null);
+        setResultsData({
+          documentTitle: docFileName.replace(/\.pdf$/i, ""),
+          requirements: data.requirements,
+          metCount: data.run.metCount ?? 0,
+          notMetCount: data.run.notMetCount ?? 0,
+          unclearCount: data.run.unclearCount ?? 0,
+          viewMode: "full",
+        });
+      }
+    } catch {}
+  }, [pastRuns]);
+
   const handleRemovePolicy = useCallback((id: string) => {
     // Could call DELETE /api/policies/[id] here
   }, []);
@@ -314,6 +346,7 @@ export function AppShell() {
           open={sidebarOpen}
           policyFolders={policyFolders}
           complianceDocs={complianceDocs}
+          pastRuns={pastRuns}
           selectedPolicyIds={selectedPolicies}
           activeComplianceDocId={activeComplianceDocId}
           onSelectPolicy={handleSelectPolicy}
@@ -323,6 +356,7 @@ export function AppShell() {
           onAddPolicy={handleAddPolicy}
           onClickComplianceDoc={handleClickComplianceDoc}
           onAddComplianceDoc={handleAddComplianceDoc}
+          onViewRun={handleViewRun}
         />
 
         <main className="min-w-0 flex-1 pb-24">
