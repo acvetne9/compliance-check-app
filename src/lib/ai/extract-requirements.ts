@@ -54,7 +54,7 @@ export async function extractRequirementsFromPdf(
   const base64 = Buffer.from(pdfBuffer).toString("base64");
 
   const { object } = await generateObject({
-    model: anthropic("claude-sonnet-4-6-20250514"),
+    model: anthropic("claude-haiku-4-5-20251001"),
     schema: extractedRequirementsSchema,
     maxOutputTokens: 64000,
     messages: [
@@ -84,7 +84,7 @@ async function extractRequirementsSinglePass(
   fileName: string
 ): Promise<ExtractedRequirements> {
   const { object } = await generateObject({
-    model: anthropic("claude-sonnet-4-6-20250514"),
+    model: anthropic("claude-haiku-4-5-20251001"),
     schema: extractedRequirementsSchema,
     system: SYSTEM_PROMPT,
     prompt: `Document: ${fileName}\n\n${fullText}`,
@@ -113,7 +113,7 @@ async function extractRequirementsMultiPass(
 
   for (let i = 0; i < sections.length; i++) {
     const { object } = await generateObject({
-      model: anthropic("claude-sonnet-4-6-20250514"),
+      model: anthropic("claude-haiku-4-5-20251001"),
       schema: extractedRequirementsSchema,
       system: SYSTEM_PROMPT,
       prompt: `Document: ${fileName} (Section ${i + 1} of ${sections.length})\n\n${sections[i]}`,

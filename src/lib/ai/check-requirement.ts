@@ -125,7 +125,7 @@ async function deepCheck(
   policyFileName: string
 ): Promise<ComplianceCheckResult> {
   const { object } = await generateObject({
-    model: anthropic("claude-sonnet-4-6-20250514"),
+    model: anthropic("claude-haiku-4-5-20251001"),
     schema: complianceCheckSchema,
     maxOutputTokens: 2000,
     messages: [
