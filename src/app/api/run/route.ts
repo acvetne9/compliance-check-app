@@ -1,7 +1,6 @@
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-import "@/lib/polyfills";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
@@ -11,8 +10,7 @@ import {
   complianceResults,
 } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { extractPdfText } from "@/lib/pdf";
-import { extractRequirements } from "@/lib/ai/extract-requirements";
+import { extractRequirementsFromPdf } from "@/lib/ai/extract-requirements";
 import { checkRequirement } from "@/lib/ai/check-requirement";
 import { hashRequirementText } from "@/types";
 
@@ -75,17 +73,16 @@ export async function POST(request: NextRequest) {
 
           // Fetch PDF from blob
           const response = await fetch(doc.blobUrl);
-          const buffer = Buffer.from(await response.arrayBuffer());
-          const extraction = await extractPdfText(buffer);
+          const pdfBuffer = Buffer.from(await response.arrayBuffer());
 
           send({
             type: "extracting",
-            message: "Extracting compliance requirements with Claude...",
+            message: "Sending PDF to Claude for requirement extraction...",
           });
 
-          // Extract requirements
-          const extracted = await extractRequirements(
-            extraction.text,
+          // Extract requirements using Claude's native PDF support (no pdf-parse needed)
+          const extracted = await extractRequirementsFromPdf(
+            pdfBuffer,
             doc.fileName
           );
 
