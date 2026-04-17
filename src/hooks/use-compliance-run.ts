@@ -35,7 +35,10 @@ export function useComplianceRun(): UseComplianceRunReturn {
       setStatus("starting");
 
       try {
-        // Start the workflow
+        const abort = new AbortController();
+        abortRef.current = abort;
+
+        // POST starts the run and returns an SSE stream directly
         const res = await fetch("/api/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -43,30 +46,21 @@ export function useComplianceRun(): UseComplianceRunReturn {
             complianceDocId,
             policyIds: policyIds?.length ? policyIds : undefined,
           }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error ?? `Failed to start run (${res.status})`);
-        }
-
-        const { runId: newRunId } = await res.json();
-        setRunId(newRunId);
-        setStatus("running");
-
-        // Connect to SSE stream
-        const abort = new AbortController();
-        abortRef.current = abort;
-
-        const stream = await fetch(`/api/run/${newRunId}/stream`, {
           signal: abort.signal,
         });
 
-        if (!stream.ok || !stream.body) {
-          throw new Error("Failed to connect to progress stream");
+        if (!res.ok || !res.body) {
+          let errorMsg = `Failed to start run (${res.status})`;
+          try {
+            const data = await res.json();
+            errorMsg = data.error ?? errorMsg;
+          } catch {}
+          throw new Error(errorMsg);
         }
 
-        const reader = stream.body.getReader();
+        setStatus("running");
+
+        const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
 
@@ -82,7 +76,9 @@ export function useComplianceRun(): UseComplianceRunReturn {
             if (!line.startsWith("data: ")) continue;
             const data = line.slice(6).trim();
             if (data === "[DONE]") {
-              setStatus("completed");
+              setStatus((prev) =>
+                prev === "running" ? "completed" : prev
+              );
               return;
             }
 
@@ -90,7 +86,9 @@ export function useComplianceRun(): UseComplianceRunReturn {
               const event: ProgressEvent = JSON.parse(data);
               setEvents((prev) => [...prev, event]);
 
-              if (event.type === "completed") {
+              if (event.type === "started" && "runId" in event) {
+                setRunId(event.runId);
+              } else if (event.type === "completed") {
                 setStatus("completed");
               } else if (event.type === "error") {
                 setError(event.message);
@@ -102,7 +100,6 @@ export function useComplianceRun(): UseComplianceRunReturn {
           }
         }
 
-        // Stream ended without explicit completion
         setStatus((prev) => (prev === "running" ? "completed" : prev));
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
