@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { Header } from "./header";
 import { BottomBar } from "./bottom-bar";
 import { Sidebar } from "@/components/sidebar/sidebar";
+import { PdfPreview } from "@/components/main/pdf-preview";
 
 // Placeholder data until hooks are wired in commit 13
 const PLACEHOLDER_FOLDERS = [
@@ -31,9 +32,17 @@ const PLACEHOLDER_COMPLIANCE: Array<{
   { id: "hard", fileName: "Example Input Doc - Hard.pdf" },
 ];
 
+interface PreviewState {
+  id: string;
+  fileName: string;
+  docType: "policy" | "compliance";
+  pdfUrl: string | null;
+}
+
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedPolicies, setSelectedPolicies] = useState<Set<string>>(new Set());
+  const [preview, setPreview] = useState<PreviewState | null>(null);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -41,6 +50,7 @@ export function AppShell() {
 
   const handleNewRun = useCallback(() => {
     setSelectedPolicies(new Set());
+    setPreview(null);
   }, []);
 
   const handleSubmit = useCallback((file: File) => {
@@ -56,9 +66,46 @@ export function AppShell() {
     });
   }, []);
 
-  const handleClickPolicy = useCallback((id: string) => {
-    console.log("Preview policy:", id);
-  }, []);
+  const openPreview = useCallback(
+    async (id: string, docType: "policy" | "compliance") => {
+      // Find the filename from placeholder data
+      let fileName = "";
+      if (docType === "policy") {
+        for (const folder of PLACEHOLDER_FOLDERS) {
+          const doc = folder.docs.find((d) => d.id === id);
+          if (doc) { fileName = doc.fileName; break; }
+        }
+      } else {
+        const doc = PLACEHOLDER_COMPLIANCE.find((d) => d.id === id);
+        if (doc) fileName = doc.fileName;
+      }
+
+      // Try fetching preview URL from API (will work once DB is connected)
+      let pdfUrl: string | null = null;
+      try {
+        const res = await fetch(`/api/preview/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          pdfUrl = data.url;
+        }
+      } catch {
+        // API not available yet — show placeholder
+      }
+
+      setPreview({ id, fileName, docType, pdfUrl });
+    },
+    []
+  );
+
+  const handleClickPolicy = useCallback(
+    (id: string) => openPreview(id, "policy"),
+    [openPreview]
+  );
+
+  const handleClickComplianceDoc = useCallback(
+    (id: string) => openPreview(id, "compliance"),
+    [openPreview]
+  );
 
   const handleRemovePolicy = useCallback((id: string) => {
     console.log("Remove policy:", id);
@@ -66,10 +113,6 @@ export function AppShell() {
 
   const handleAddPolicy = useCallback(() => {
     console.log("Add policy");
-  }, []);
-
-  const handleClickComplianceDoc = useCallback((id: string) => {
-    console.log("Preview compliance doc:", id);
   }, []);
 
   const handleAddComplianceDoc = useCallback(() => {
@@ -97,7 +140,21 @@ export function AppShell() {
           onClickComplianceDoc={handleClickComplianceDoc}
           onAddComplianceDoc={handleAddComplianceDoc}
         />
-        <main className="min-w-0 flex-1" />
+
+        {/* Main content area */}
+        <main className="min-w-0 flex-1 pb-24">
+          {preview ? (
+            <PdfPreview
+              fileName={preview.fileName}
+              pdfUrl={preview.pdfUrl}
+              docType={preview.docType}
+              onClose={() => setPreview(null)}
+              onRunCompliance={() => {
+                console.log("Run compliance on:", preview.id);
+              }}
+            />
+          ) : null}
+        </main>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-10">
