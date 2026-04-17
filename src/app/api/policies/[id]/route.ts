@@ -45,7 +45,7 @@ export async function GET(
     .from(complianceResults)
     .innerJoin(requirements, eq(complianceResults.requirementId, requirements.id))
     .where(eq(complianceResults.policyId, id))
-    .orderBy(requirements.externalId);
+;
 
   return NextResponse.json({ policy, complianceResults: results });
 }

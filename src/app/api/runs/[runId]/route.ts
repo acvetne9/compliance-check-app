@@ -8,6 +8,7 @@ import {
   policies,
 } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
+import { sortByReqNumber } from "@/types";
 
 /**
  * GET /api/runs/[runId]
@@ -33,11 +34,12 @@ export async function GET(
     .from(complianceDocs)
     .where(eq(complianceDocs.id, run.complianceDocId));
 
-  const reqs = await db
-    .select()
-    .from(requirements)
-    .where(eq(requirements.complianceRunId, runId))
-    .orderBy(requirements.externalId);
+  const reqs = sortByReqNumber(
+    await db
+      .select()
+      .from(requirements)
+      .where(eq(requirements.complianceRunId, runId))
+  );
 
   const reqIds = reqs.map((r) => r.id);
   const results =

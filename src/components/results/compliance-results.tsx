@@ -40,14 +40,19 @@ export function ComplianceResults({
   const notMetPct = total > 0 ? Math.round((notMetCount / total) * 100) : 0;
   const unclearPct = total > 0 ? Math.round((unclearCount / total) * 100) : 0;
 
-  const filtered =
+  const filtered = (
     viewMode === "gaps"
       ? requirements.filter(
           (r) =>
             r.aggregatedStatus === "not_met" ||
             r.aggregatedStatus === "unclear"
         )
-      : requirements;
+      : [...requirements]
+  ).sort((a, b) => {
+    const numA = parseInt(a.externalId?.replace(/\D/g, "") ?? "0", 10);
+    const numB = parseInt(b.externalId?.replace(/\D/g, "") ?? "0", 10);
+    return numA - numB;
+  });
 
   return (
     <div className="flex h-full flex-col">

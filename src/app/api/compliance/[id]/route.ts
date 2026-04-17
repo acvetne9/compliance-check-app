@@ -8,6 +8,7 @@ import {
   policies,
 } from "@/lib/db/schema";
 import { eq, desc, inArray, and } from "drizzle-orm";
+import { sortByReqNumber } from "@/types";
 import { deletePdf } from "@/lib/blob";
 
 /**
@@ -53,11 +54,12 @@ export async function GET(
   }
 
   // Get requirements for this run
-  let reqs = await db
-    .select()
-    .from(requirements)
-    .where(eq(requirements.complianceRunId, latestRun.id))
-    .orderBy(requirements.externalId);
+  let reqs = sortByReqNumber(
+    await db
+      .select()
+      .from(requirements)
+      .where(eq(requirements.complianceRunId, latestRun.id))
+  );
 
   // Filter to gaps only if not full view
   if (view === "gaps") {

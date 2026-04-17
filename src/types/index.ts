@@ -86,6 +86,19 @@ export type ProgressEvent =
 // ---------------------------------------------------------------------------
 
 /**
+ * Sort requirements by numeric portion of externalId (REQ-001 before REQ-010).
+ */
+export function sortByReqNumber<T extends { externalId?: string | null }>(
+  items: T[]
+): T[] {
+  return [...items].sort((a, b) => {
+    const numA = parseInt(a.externalId?.replace(/\D/g, "") ?? "0", 10);
+    const numB = parseInt(b.externalId?.replace(/\D/g, "") ?? "0", 10);
+    return numA - numB;
+  });
+}
+
+/**
  * Normalize requirement text and produce a hash for cross-run caching.
  * Strips whitespace, lowercases, removes punctuation variations.
  */
