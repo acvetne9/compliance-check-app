@@ -356,21 +356,14 @@ export function AppShell() {
       return;
     }
 
+    // Just highlight the checked policies — no results breakdown
     try {
       const res = await fetch(`/api/runs/${runId}`);
       if (!res.ok) return;
       const data = await res.json();
-      if (data.run && data.requirements) {
+      if (data.requirements) {
         setPreview(null);
-        setResultsData({
-          documentTitle: docFileName.replace(/\.pdf$/i, ""),
-          requirements: data.requirements,
-          metCount: data.run.metCount ?? 0,
-          notMetCount: data.run.notMetCount ?? 0,
-          unclearCount: data.run.unclearCount ?? 0,
-          viewMode: "full",
-        });
-        // Highlight policies that were checked in this run
+        setResultsData(null);
         const pIds = new Set<string>();
         for (const req of data.requirements) {
           for (const r of req.results ?? []) {
@@ -380,7 +373,7 @@ export function AppShell() {
         setCheckedPolicyIds(pIds);
       }
     } catch {}
-  }, []);
+  }, [activeRunId]);
 
   const handleViewPolicyCompliance = useCallback(
     async (policyId: string) => {
