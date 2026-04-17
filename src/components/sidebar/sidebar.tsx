@@ -49,9 +49,11 @@ interface SidebarProps {
   onSelectFolder: (folderId: string) => void;
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
-  onAddPolicy: () => void;
+  onAddPolicyToFolder: (folderId: string) => void;
+  onAddFolder: () => void;
   activeComplianceDocId: string | null;
   onClickComplianceDoc: (id: string) => void;
+  onRemoveComplianceDoc: (id: string) => void;
   onAddComplianceDoc: () => void;
   onViewRun: (runId: string, docFileName: string) => void;
 }
@@ -66,9 +68,11 @@ export function Sidebar({
   onSelectFolder,
   onClickPolicy,
   onRemovePolicy,
-  onAddPolicy,
+  onAddPolicyToFolder,
+  onAddFolder,
   activeComplianceDocId,
   onClickComplianceDoc,
+  onRemoveComplianceDoc,
   onAddComplianceDoc,
   onViewRun,
 }: SidebarProps) {
@@ -83,7 +87,7 @@ export function Sidebar({
       <div className="flex h-full w-52 flex-col">
         <SearchBar value={search} onChange={setSearch} />
 
-        <ScrollArea className="flex-1 overflow-y-auto">
+        <ScrollArea className="flex-1 overflow-y-auto [&_[data-slot=scroll-area-scrollbar]]:data-[state=hidden]:opacity-0">
           <div className="flex flex-col pb-4">
             <PolicyBrowser
               folders={policyFolders}
@@ -93,7 +97,8 @@ export function Sidebar({
               onSelectFolder={onSelectFolder}
               onClickPolicy={onClickPolicy}
               onRemovePolicy={onRemovePolicy}
-              onAddPolicy={onAddPolicy}
+              onAddPolicyToFolder={onAddPolicyToFolder}
+              onAddFolder={onAddFolder}
             />
 
             <ComplianceList
@@ -101,6 +106,7 @@ export function Sidebar({
               activeDocId={activeComplianceDocId}
               searchFilter={search}
               onClickDoc={onClickComplianceDoc}
+              onRemoveDoc={onRemoveComplianceDoc}
               onAddDoc={onAddComplianceDoc}
             />
 

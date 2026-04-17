@@ -36,10 +36,10 @@ export function RequirementRow({
   const config = STATUS_CONFIG[status];
 
   return (
-    <div className="border-b border-border/40 last:border-0">
+    <div className="border-b border-border/20 last:border-0">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/50"
+        className="flex w-full items-start gap-4 px-6 py-4 text-left transition-colors hover:bg-secondary/30"
       >
         <span className="mt-0.5 shrink-0 text-sm">{config.emoji}</span>
 
@@ -69,7 +69,7 @@ export function RequirementRow({
       </button>
 
       {expanded && results.length > 0 && (
-        <div className="border-t border-border/30 bg-surface-sunken px-4 py-3">
+        <div className="border-t border-border/20 bg-surface-sunken px-6 py-4">
           {results.map((r, i) => (
             <div key={i} className="mb-3 last:mb-0">
               <div className="flex items-center gap-2 text-xs">
@@ -103,7 +103,7 @@ export function RequirementRow({
       )}
 
       {expanded && results.length === 0 && (
-        <div className="border-t border-border/30 bg-surface-sunken px-4 py-3">
+        <div className="border-t border-border/20 bg-surface-sunken px-6 py-4">
           <p className="text-xs text-muted-foreground">
             No detailed results available.
           </p>

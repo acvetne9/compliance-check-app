@@ -51,7 +51,7 @@ export function ComplianceResults({
   return (
     <div className="flex h-full flex-col">
       {/* Summary bar */}
-      <div className="shrink-0 border-b border-border/60 bg-card px-4 py-3">
+      <div className="shrink-0 border-b border-border/60 bg-card px-6 py-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-foreground">
             {documentTitle}

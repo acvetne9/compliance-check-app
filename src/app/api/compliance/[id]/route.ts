@@ -8,6 +8,7 @@ import {
   policies,
 } from "@/lib/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
+import { deletePdf } from "@/lib/blob";
 
 /**
  * GET /api/compliance/[id]
@@ -91,4 +92,42 @@ export async function GET(
     run: latestRun,
     requirements: requirementsWithResults,
   });
+}
+
+/**
+ * DELETE /api/compliance/[id]
+ * Remove a compliance doc, its runs, and associated data.
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const [doc] = await db
+    .select()
+    .from(complianceDocs)
+    .where(eq(complianceDocs.id, id));
+
+  if (!doc) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Delete blob
+  await deletePdf(doc.blobUrl).catch(() => {});
+
+  // Delete runs (cascades to requirements and results via schema)
+  const runs = await db
+    .select({ id: complianceRuns.id })
+    .from(complianceRuns)
+    .where(eq(complianceRuns.complianceDocId, id));
+
+  for (const run of runs) {
+    await db.delete(complianceResults).where(eq(complianceResults.complianceRunId, run.id));
+    await db.delete(requirements).where(eq(requirements.complianceRunId, run.id));
+  }
+  await db.delete(complianceRuns).where(eq(complianceRuns.complianceDocId, id));
+  await db.delete(complianceDocs).where(eq(complianceDocs.id, id));
+
+  return NextResponse.json({ deleted: true });
 }

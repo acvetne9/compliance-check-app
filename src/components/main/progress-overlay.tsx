@@ -100,7 +100,7 @@ export function ProgressOverlay({ events, isRunning }: ProgressOverlayProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="shrink-0 border-b border-border/60 bg-card px-4 py-3">
+      <div className="shrink-0 border-b border-border/60 bg-card px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {errorEvent ? (
@@ -161,9 +161,9 @@ export function ProgressOverlay({ events, isRunning }: ProgressOverlayProps) {
       {/* Live checklist */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {liveRequirements.length === 0 && !extractedEvent && (
-          <div className="flex items-center justify-center py-16">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <Loader2 className="size-8 animate-spin text-primary/40" />
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="size-10 animate-spin text-primary/30" />
               <p className="text-sm text-muted-foreground">
                 {lastExtracting?.type === "extracting"
                   ? lastExtracting.message
@@ -177,7 +177,7 @@ export function ProgressOverlay({ events, isRunning }: ProgressOverlayProps) {
           <div
             key={req.id}
             data-active={req.status === "checking" ? "" : undefined}
-            className={`flex items-start gap-3 border-b border-border/30 px-4 py-2.5 transition-colors ${
+            className={`flex items-start gap-3 border-b border-border/20 px-6 py-3.5 transition-colors ${
               req.status === "checking"
                 ? "bg-primary/5"
                 : req.status === "pending"

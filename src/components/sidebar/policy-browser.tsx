@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderClosed, Plus } from "lucide-react";
+import { FolderClosed, FolderPlus, Plus } from "lucide-react";
 import { PolicyFolder } from "./policy-folder";
 import { PolicyItem } from "./policy-item";
 
@@ -24,7 +24,8 @@ interface PolicyBrowserProps {
   onSelectFolder: (folderId: string) => void;
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
-  onAddPolicy: () => void;
+  onAddPolicyToFolder: (folderId: string) => void;
+  onAddFolder: () => void;
 }
 
 export function PolicyBrowser({
@@ -35,7 +36,8 @@ export function PolicyBrowser({
   onSelectFolder,
   onClickPolicy,
   onRemovePolicy,
-  onAddPolicy,
+  onAddPolicyToFolder,
+  onAddFolder,
 }: PolicyBrowserProps) {
   const filteredFolders = folders
     .map((folder) => ({
@@ -96,6 +98,13 @@ export function PolicyBrowser({
                     onRemove={onRemovePolicy}
                   />
                 ))}
+                <button
+                  onClick={() => onAddPolicyToFolder(folder.folderId)}
+                  className="mt-0.5 flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-[10px] text-muted-foreground/40 transition-colors hover:bg-sidebar-accent hover:text-muted-foreground"
+                >
+                  <Plus className="size-2.5" />
+                  Add Policy
+                </button>
               </PolicyFolder>
             );
           })
@@ -103,11 +112,11 @@ export function PolicyBrowser({
       </div>
 
       <button
-        onClick={onAddPolicy}
+        onClick={onAddFolder}
         className="mt-1 flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-muted-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-muted-foreground"
       >
-        <Plus className="size-3" />
-        Add Policy
+        <FolderPlus className="size-3" />
+        Add Folder
       </button>
     </div>
   );

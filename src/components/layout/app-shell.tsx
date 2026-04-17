@@ -321,16 +321,39 @@ export function AppShell() {
     } catch {}
   }, [pastRuns]);
 
-  const handleRemovePolicy = useCallback((id: string) => {
-    // Could call DELETE /api/policies/[id] here
+  const handleRemovePolicy = useCallback(
+    async (id: string) => {
+      await fetch(`/api/policies/${id}`, { method: "DELETE" });
+      refreshData();
+    },
+    [refreshData]
+  );
+
+  const handleRemoveComplianceDoc = useCallback(
+    async (id: string) => {
+      await fetch(`/api/compliance/${id}`, { method: "DELETE" }).catch(() => {});
+      if (activeComplianceDocId === id) {
+        setActiveComplianceDocId(null);
+        setPreview(null);
+      }
+      refreshData();
+    },
+    [activeComplianceDocId, refreshData]
+  );
+
+  const handleAddPolicyToFolder = useCallback((folderId: string) => {
+    // TODO: open file picker, upload, ingest to folder
+    console.log("Add policy to folder:", folderId);
   }, []);
 
-  const handleAddPolicy = useCallback(() => {
-    // Could trigger a file upload dialog for policies
+  const handleAddFolder = useCallback(() => {
+    // TODO: prompt for folder name, create folder
+    console.log("Add folder");
   }, []);
 
   const handleAddComplianceDoc = useCallback(() => {
-    // Could trigger a file upload dialog for compliance docs
+    // TODO: open file picker, upload compliance doc
+    console.log("Add compliance doc");
   }, []);
 
   return (
@@ -353,8 +376,10 @@ export function AppShell() {
           onSelectFolder={handleSelectFolder}
           onClickPolicy={handleClickPolicy}
           onRemovePolicy={handleRemovePolicy}
-          onAddPolicy={handleAddPolicy}
+          onAddPolicyToFolder={handleAddPolicyToFolder}
+          onAddFolder={handleAddFolder}
           onClickComplianceDoc={handleClickComplianceDoc}
+          onRemoveComplianceDoc={handleRemoveComplianceDoc}
           onAddComplianceDoc={handleAddComplianceDoc}
           onViewRun={handleViewRun}
         />

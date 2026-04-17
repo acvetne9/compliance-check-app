@@ -17,6 +17,7 @@ interface ComplianceListProps {
   activeDocId: string | null;
   searchFilter: string;
   onClickDoc: (id: string) => void;
+  onRemoveDoc: (id: string) => void;
   onAddDoc: () => void;
 }
 
@@ -25,6 +26,7 @@ export function ComplianceList({
   activeDocId,
   searchFilter,
   onClickDoc,
+  onRemoveDoc,
   onAddDoc,
 }: ComplianceListProps) {
   const filtered = searchFilter
@@ -61,6 +63,7 @@ export function ComplianceList({
               notMetCount={doc.notMetCount}
               unclearCount={doc.unclearCount}
               onClick={onClickDoc}
+              onRemove={onRemoveDoc}
             />
           ))
         )}
