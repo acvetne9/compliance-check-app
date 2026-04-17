@@ -60,8 +60,8 @@ export function BottomBar({ selectedPolicyCount, onSubmit }: BottomBarProps) {
       : "Upload a compliance doc and run against all policies, or select specific docs from the sidebar first.";
 
   return (
-    <div className="shrink-0 bg-background px-4 pb-5 pt-3">
-      <div className="mx-auto max-w-3xl">
+    <div className="bg-background px-4 pb-5 pt-3">
+      <div className="mx-auto max-w-2xl">
         <div
           className={`relative flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm transition-all ${
             isDragging

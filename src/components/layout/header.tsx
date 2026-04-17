@@ -24,7 +24,7 @@ export function Header({ sidebarOpen, onToggleSidebar, onNewRun }: HeaderProps) 
         )}
       </button>
 
-      <span className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold tracking-tight text-foreground">
+      <span className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold tracking-tight text-foreground">
         AndreasGPT
       </span>
 

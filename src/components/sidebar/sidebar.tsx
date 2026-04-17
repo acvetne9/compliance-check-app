@@ -16,10 +16,10 @@ export function Sidebar({ open, children }: SidebarProps) {
   return (
     <aside
       className={`sidebar-transition shrink-0 overflow-hidden border-r border-sidebar-border bg-sidebar ${
-        open ? "w-64" : "w-0"
+        open ? "w-52" : "w-0"
       }`}
     >
-      <div className="flex h-full w-64 flex-col">
+      <div className="flex h-full w-52 flex-col">
         <SearchBar value={search} onChange={setSearch} />
 
         <ScrollArea className="flex-1 overflow-y-auto">

@@ -33,15 +33,7 @@ export function AppShell() {
 
       <div className="flex min-h-0 flex-1">
         <Sidebar open={sidebarOpen} />
-
-        {/* Main content area */}
-        <main className="flex min-w-0 flex-1 flex-col justify-end">
-          {/* Bottom bar */}
-          <BottomBar
-            selectedPolicyCount={selectedPolicies.length}
-            onSubmit={handleSubmit}
-          />
-        </main>
+        <main className="min-w-0 flex-1" />
       </div>
 
       {/* Welcome state — centered on full page */}
@@ -74,6 +66,14 @@ export function AppShell() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Bottom bar — fixed, centered on full page */}
+      <div className="fixed bottom-0 left-0 right-0 z-10">
+        <BottomBar
+          selectedPolicyCount={selectedPolicies.length}
+          onSubmit={handleSubmit}
+        />
       </div>
     </div>
   );
