@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+import "@/lib/polyfills";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {

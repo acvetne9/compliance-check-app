@@ -1,5 +1,6 @@
 export const runtime = "nodejs";
 
+import "@/lib/polyfills";
 import { NextResponse } from "next/server";
 
 export async function POST() {
