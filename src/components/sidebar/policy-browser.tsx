@@ -25,7 +25,6 @@ interface PolicyBrowserProps {
   onSelectFolder: (folderId: string) => void;
   onClickPolicy: (id: string) => void;
   onRemovePolicy: (id: string) => void;
-  onViewPolicyCompliance: (id: string) => void;
   onAddPolicyToFolder: (folderId: string) => void;
   onAddFolder: () => void;
 }
@@ -39,7 +38,6 @@ export function PolicyBrowser({
   onSelectFolder,
   onClickPolicy,
   onRemovePolicy,
-  onViewPolicyCompliance,
   onAddPolicyToFolder,
   onAddFolder,
 }: PolicyBrowserProps) {
@@ -99,7 +97,6 @@ export function PolicyBrowser({
                     onSelect={onSelectPolicy}
                     onClick={onClickPolicy}
                     onRemove={onRemovePolicy}
-                    onViewCompliance={onViewPolicyCompliance}
                   />
                 ))}
                 <button

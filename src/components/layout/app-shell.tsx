@@ -454,7 +454,6 @@ export function AppShell() {
           onSelectFolder={handleSelectFolder}
           onClickPolicy={handleClickPolicy}
           onRemovePolicy={handleRemovePolicy}
-          onViewPolicyCompliance={handleViewPolicyCompliance}
           checkedPolicyIds={checkedPolicyIds}
           onAddPolicyToFolder={handleAddPolicyToFolder}
           onAddFolder={handleAddFolder}
@@ -469,30 +468,7 @@ export function AppShell() {
             <ProgressOverlay events={events} isRunning={runStatus === "running"} />
           )}
 
-          {/* When both preview and results are set (policy compliance view), show both */}
-          {preview && resultsData && mainView !== "running" && (
-            <>
-              <div className="h-[40vh] min-h-[300px] shrink-0">
-                <PdfPreview
-                  fileName={preview.fileName}
-                  pdfUrl={preview.pdfUrl}
-                  docType={preview.docType}
-                  onClose={() => { setPreview(null); setResultsData(null); }}
-                />
-              </div>
-              <ComplianceResults
-                documentTitle={resultsData.documentTitle}
-                requirements={resultsData.requirements}
-                metCount={resultsData.metCount}
-                notMetCount={resultsData.notMetCount}
-                unclearCount={resultsData.unclearCount}
-                viewMode={resultsData.viewMode}
-              />
-            </>
-          )}
-
-          {/* Results only (no preview) */}
-          {!preview && resultsData && mainView === "results" && (
+          {mainView === "results" && resultsData && (
             <ComplianceResults
               documentTitle={resultsData.documentTitle}
               requirements={resultsData.requirements}
@@ -503,8 +479,7 @@ export function AppShell() {
             />
           )}
 
-          {/* Preview only (no results) */}
-          {preview && !resultsData && mainView === "preview" && (
+          {mainView === "preview" && preview && (
             <PdfPreview
               fileName={preview.fileName}
               pdfUrl={preview.pdfUrl}

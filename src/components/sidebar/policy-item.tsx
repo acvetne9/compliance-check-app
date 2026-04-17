@@ -10,7 +10,6 @@ interface PolicyItemProps {
   onSelect?: (id: string) => void;
   onClick?: (id: string) => void;
   onRemove?: (id: string) => void;
-  onViewCompliance?: (id: string) => void;
 }
 
 export function PolicyItem({
@@ -21,7 +20,6 @@ export function PolicyItem({
   onSelect,
   onClick,
   onRemove,
-  onViewCompliance,
 }: PolicyItemProps) {
   const displayName = fileName
     .replace(/\.pdf$/i, "")
@@ -49,17 +47,8 @@ export function PolicyItem({
         </span>
       </button>
 
-      {hasComplianceResults && onViewCompliance && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewCompliance(id);
-          }}
-          className="shrink-0 rounded p-0.5 text-primary/50 transition-colors hover:text-primary"
-          title="View compliance results"
-        >
-          <ShieldCheck className="size-3" />
-        </button>
+      {hasComplianceResults && (
+        <ShieldCheck className="size-3 shrink-0 text-primary/50" />
       )}
 
       {onRemove && (
