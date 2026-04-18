@@ -662,6 +662,7 @@ export function AppShell() {
                 }
               : undefined
           }
+          onStopRun={resetRun}
         />
       </div>
     </div>

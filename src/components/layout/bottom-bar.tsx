@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Paperclip, ArrowUp, X, FileText, Play, Loader2 } from "lucide-react";
+import { Paperclip, ArrowUp, X, FileText, Play, Loader2, Square } from "lucide-react";
 
 interface BottomBarProps {
   selectedPolicyCount: number;
@@ -9,6 +9,7 @@ interface BottomBarProps {
   isRunning: boolean;
   onSubmit: (file: File) => void | Promise<void>;
   onRunActive?: () => void;
+  onStopRun?: () => void;
 }
 
 export function BottomBar({
@@ -17,6 +18,7 @@ export function BottomBar({
   isRunning,
   onSubmit,
   onRunActive,
+  onStopRun,
 }: BottomBarProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -150,36 +152,38 @@ export function BottomBar({
             )}
           </div>
 
+          {/* Stop button when running */}
+          {busy && onStopRun && (
+            <button
+              onClick={onStopRun}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive shadow-sm transition-all hover:bg-destructive/20"
+              aria-label="Stop compliance check"
+            >
+              <Square className="size-3 fill-current" />
+              Stop
+            </button>
+          )}
+
           {/* Upload + run new file */}
-          {file && (
+          {!busy && file && (
             <button
               onClick={handleSubmitFile}
-              disabled={busy}
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-70"
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
               aria-label="Upload and run compliance"
             >
-              {busy ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <ArrowUp className="size-4" />
-              )}
+              <ArrowUp className="size-4" />
             </button>
           )}
 
           {/* Run against already-selected compliance doc */}
-          {!file && hasComplianceDoc && onRunActive && (
+          {!busy && !file && hasComplianceDoc && onRunActive && (
             <button
               onClick={onRunActive}
-              disabled={busy}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-70"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
               aria-label="Run compliance check"
             >
-              {busy ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <Play className="size-3" />
-              )}
-              {busy ? "Running..." : "Run"}
+              <Play className="size-3" />
+              Run
             </button>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, X } from "lucide-react";
+import { FileText, X, ShieldCheck } from "lucide-react";
 
 interface PolicyItemProps {
   id: string;
@@ -50,6 +50,10 @@ export function PolicyItem({
           {displayName}
         </span>
       </button>
+
+      {highlighted && (
+        <ShieldCheck className="size-3 shrink-0 text-primary/50" />
+      )}
 
       {onRemove && (
         <button
