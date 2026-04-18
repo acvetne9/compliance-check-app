@@ -551,7 +551,6 @@ export function AppShell() {
       <Header
         sidebarOpen={sidebarOpen}
         onToggleSidebar={handleToggleSidebar}
-        onNewRun={handleNewRun}
       />
 
       <div className="flex min-h-0 flex-1">

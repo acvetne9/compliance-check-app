@@ -1,20 +1,17 @@
 "use client";
 
-import { PanelLeftClose, PanelLeft, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 
 interface HeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onNewRun: () => void;
 }
 
-export function Header({ sidebarOpen, onToggleSidebar, onNewRun }: HeaderProps) {
-  // Offset title center by half the sidebar width when open
+export function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   const titleOffset = sidebarOpen ? "calc(50% + 104px)" : "50%";
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-background px-3">
+    <header className="flex h-12 shrink-0 items-center border-b border-border/60 bg-background px-3">
       <button
         onClick={onToggleSidebar}
         className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
@@ -33,16 +30,6 @@ export function Header({ sidebarOpen, onToggleSidebar, onNewRun }: HeaderProps) 
       >
         AndreasGPT
       </span>
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onNewRun}
-        className="gap-1.5 text-xs"
-      >
-        <Plus className="size-3.5" />
-        <span className="hidden sm:inline">New Run</span>
-      </Button>
     </header>
   );
 }
