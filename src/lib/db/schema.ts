@@ -61,6 +61,10 @@ export const complianceDocs = pgTable("compliance_docs", {
     .$defaultFn(() => crypto.randomUUID()),
   fileName: text("file_name").notNull(),
   blobUrl: text("blob_url").notNull(),
+  textContent: text("text_content"),
+  requirementsJson: text("requirements_json"),
+  extractionStatus: text("extraction_status"),
+  userId: text("user_id"), // null = shared/seed doc, set = user-uploaded
   pageCount: integer("page_count"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
@@ -83,6 +87,7 @@ export const complianceRuns = pgTable(
     metCount: integer("met_count"),
     notMetCount: integer("not_met_count"),
     unclearCount: integer("unclear_count"),
+    userId: text("user_id"),
     startedAt: timestamp("started_at").defaultNow(),
     completedAt: timestamp("completed_at"),
   },

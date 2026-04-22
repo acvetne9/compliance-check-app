@@ -9,9 +9,6 @@ vi.mock("ai", () => ({
   generateText: vi.fn(),
 }));
 
-vi.mock("@ai-sdk/openai", () => ({
-  openai: { embedding: vi.fn(() => "mocked-embedding-model") },
-}));
 
 vi.mock("@ai-sdk/anthropic", () => ({
   anthropic: vi.fn(() => "mocked-haiku-model"),
@@ -214,9 +211,7 @@ describe("ingestPolicy (full pipeline with mocks)", () => {
     expect(result.chunkCount).toBeGreaterThan(0);
     expect(result.summary).toContain("capitation");
 
-    // Verify embeddings were generated
-    expect(mockEmbedMany).toHaveBeenCalledTimes(1);
-    // Verify summaries were generated
+    // Verify summaries were generated (no embeddings — using Haiku triage)
     expect(mockGenerateText).toHaveBeenCalledTimes(2);
   });
 });

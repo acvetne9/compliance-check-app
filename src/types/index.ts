@@ -33,15 +33,13 @@ export type ExtractedRequirements = z.infer<typeof extractedRequirementsSchema>;
 // ---------------------------------------------------------------------------
 
 export const complianceCheckSchema = z.object({
-  status: z.enum(["met", "not_met", "unclear"]),
+  status: z.enum(["met", "not_met", "not_applicable", "unclear"]),
   confidence: z
     .number()
-    .min(0)
-    .max(100)
     .describe("Confidence score 0-100"),
   evidence: z
     .string()
-    .describe("Quoted text from the policy demonstrating compliance, or explanation of gap"),
+    .describe("Quoted text from the policy, or explanation"),
   reasoning: z
     .string()
     .describe("Brief explanation of the determination"),
@@ -49,9 +47,73 @@ export const complianceCheckSchema = z.object({
 
 export type ComplianceCheckResult = z.infer<typeof complianceCheckSchema>;
 
+export const batchComplianceCheckSchema = z.object({
+  results: z.array(z.object({
+    requirementId: z.string().describe("The requirement ID, e.g. REQ-001"),
+    status: z.enum(["met", "not_met", "unclear"]),
+    evidence: z.string().describe("Quoted policy text or explanation of gap"),
+    reasoning: z.string().describe("Brief explanation"),
+    confidence: z.number().describe("Confidence 0-100"),
+  })),
+});
+
+export type BatchComplianceCheckResult = z.infer<typeof batchComplianceCheckSchema>;
+
+// ---------------------------------------------------------------------------
+// Progress event types streamed during compliance runs
+// ---------------------------------------------------------------------------
+
+export type ProgressEvent =
+  | { type: "started"; runId: string; complianceDocId: string; policyCount: number }
+  | { type: "extracting"; message: string }
+  | { type: "requirements_extracted"; count: number; documentTitle: string }
+  | {
+      type: "policy_start";
+      policyId: string;
+      policyFileName: string;
+      policyIndex: number;
+      totalPolicies: number;
+      requirementCount: number;
+    }
+  | {
+      type: "check_complete";
+      policyId: string;
+      requirementIndex: number;
+      requirementId: string;
+      externalId: string;
+      requirementText: string;
+      totalRequirements: number;
+      status: "met" | "not_met" | "not_applicable" | "unclear";
+      evidence: string;
+      reasoning: string;
+    }
+  | {
+      type: "policy_done";
+      policyId: string;
+      policyFileName: string;
+      met: number;
+      notMet: number;
+      unclear: number;
+    }
+  | { type: "completed"; runId: string; met: number; notMet: number; unclear: number }
+  | { type: "error"; message: string };
+
 // ---------------------------------------------------------------------------
 // Requirement hash utility
 // ---------------------------------------------------------------------------
+
+/**
+ * Sort requirements by numeric portion of externalId (REQ-001 before REQ-010).
+ */
+export function sortByReqNumber<T extends { externalId?: string | null }>(
+  items: T[]
+): T[] {
+  return [...items].sort((a, b) => {
+    const numA = parseInt(a.externalId?.replace(/\D/g, "") ?? "0", 10);
+    const numB = parseInt(b.externalId?.replace(/\D/g, "") ?? "0", 10);
+    return numA - numB;
+  });
+}
 
 /**
  * Normalize requirement text and produce a hash for cross-run caching.

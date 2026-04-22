@@ -8,7 +8,7 @@ import { triagePolicies } from "./triage";
 import { eq, and, inArray } from "drizzle-orm";
 
 export interface CheckRequirementOptions {
-  /** Specific policy IDs to check against. If omitted, searches all. */
+  /** Specific policy IDs to check against. If omitted, checks all. */
   policyIds?: string[];
   /** Skip the cache lookup (force re-check). */
   skipCache?: boolean;
@@ -25,10 +25,9 @@ export interface CheckResult {
  * Full pipeline for checking one requirement against relevant policies.
  *
  * 1. Check cross-run cache for existing results
- * 2. Embed requirement, vector search for relevant policy chunks
- * 3. Tier 1 (Haiku triage): filter to relevant policies using summaries
- * 4. Tier 2 (Sonnet deep check): check against full chunks with prompt caching
- * 5. Cache results for future runs
+ * 2. Tier 1 (Haiku triage): match requirement to relevant policies using summaries
+ * 3. Tier 2 (Sonnet deep check): check against full policy chunks with prompt caching
+ * 4. Cache results for future runs
  */
 export async function checkRequirement(
   requirementText: string,
@@ -43,7 +42,6 @@ export async function checkRequirement(
     const cached = await getCachedResults(requirementHash, policyIds);
     if (cached.length > 0) {
       results.push(...cached);
-      // If we have cached results for all requested policies, return early
       if (policyIds && cached.length >= policyIds.length) {
         return results;
       }
@@ -71,6 +69,8 @@ export async function checkRequirement(
     (p) => !cachedPolicyIds.has(p.id)
   );
 
+  if (candidatePolicies.length === 0) return results;
+
   const triageResults = await triagePolicies(
     requirementText,
     candidatePolicies.map((p) => ({
@@ -81,14 +81,10 @@ export async function checkRequirement(
   );
 
   const relevantPolicyIds = triageResults.map((r) => r.policyId);
-
   if (relevantPolicyIds.length === 0) return results;
 
-  // Step 4: Tier 2 — Sonnet deep check with prompt caching
-  // Group chunks by policy for cache efficiency
+  // Step 3: Tier 2 — Sonnet deep check with prompt caching
   for (const targetPolicyId of relevantPolicyIds) {
-    if (cachedPolicyIds.has(targetPolicyId)) continue;
-
     const policy = candidatePolicies.find((p) => p.id === targetPolicyId);
     if (!policy) continue;
 
@@ -101,10 +97,12 @@ export async function checkRequirement(
       )
       .join("\n\n---\n\n");
 
-    // Deep check with prompt caching on policy text
-    const checkResult = await deepCheck(requirementText, policyText, policy.fileName);
+    const checkResult = await deepCheck(
+      requirementText,
+      policyText,
+      policy.fileName
+    );
 
-    // Cache the result
     await cacheResult(requirementHash, targetPolicyId, checkResult);
 
     results.push({
@@ -120,8 +118,6 @@ export async function checkRequirement(
 
 /**
  * Tier 2: Deep compliance check using Sonnet with prompt caching.
- * The policy text is sent as a cached system message so subsequent
- * requirements checked against the same policy reuse the cache.
  */
 async function deepCheck(
   requirementText: string,
@@ -129,7 +125,7 @@ async function deepCheck(
   policyFileName: string
 ): Promise<ComplianceCheckResult> {
   const { object } = await generateObject({
-    model: anthropic("claude-sonnet-4-6-20250514"),
+    model: anthropic("claude-haiku-4-5-20251001"),
     schema: complianceCheckSchema,
     maxOutputTokens: 2000,
     messages: [
@@ -167,7 +163,7 @@ async function getCachedResults(
   requirementHash: string,
   policyIds?: string[]
 ): Promise<CheckResult[]> {
-  let query = db
+  const rows = await db
     .select({
       policyId: cachedChecks.policyId,
       status: cachedChecks.status,
@@ -178,10 +174,7 @@ async function getCachedResults(
     })
     .from(cachedChecks)
     .innerJoin(policies, eq(cachedChecks.policyId, policies.id))
-    .where(eq(cachedChecks.requirementHash, requirementHash))
-    .$dynamic();
-
-  const rows = await query;
+    .where(eq(cachedChecks.requirementHash, requirementHash));
 
   return rows
     .filter((r) => !policyIds || policyIds.includes(r.policyId))

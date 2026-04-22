@@ -7,7 +7,9 @@ import {
   complianceResults,
   policies,
 } from "@/lib/db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and } from "drizzle-orm";
+import { sortByReqNumber } from "@/types";
+import { deletePdf } from "@/lib/blob";
 
 /**
  * GET /api/compliance/[id]
@@ -34,12 +36,17 @@ export async function GET(
     );
   }
 
-  // Get latest run
+  // Get latest completed run (skip failed/pending ones)
   const [latestRun] = await db
     .select()
     .from(complianceRuns)
-    .where(eq(complianceRuns.complianceDocId, id))
-    .orderBy(desc(complianceRuns.startedAt))
+    .where(
+      and(
+        eq(complianceRuns.complianceDocId, id),
+        eq(complianceRuns.status, "completed")
+      )
+    )
+    .orderBy(desc(complianceRuns.completedAt))
     .limit(1);
 
   if (!latestRun) {
@@ -47,11 +54,12 @@ export async function GET(
   }
 
   // Get requirements for this run
-  let reqs = await db
-    .select()
-    .from(requirements)
-    .where(eq(requirements.complianceRunId, latestRun.id))
-    .orderBy(requirements.externalId);
+  let reqs = sortByReqNumber(
+    await db
+      .select()
+      .from(requirements)
+      .where(eq(requirements.complianceRunId, latestRun.id))
+  );
 
   // Filter to gaps only if not full view
   if (view === "gaps") {
@@ -91,4 +99,42 @@ export async function GET(
     run: latestRun,
     requirements: requirementsWithResults,
   });
+}
+
+/**
+ * DELETE /api/compliance/[id]
+ * Remove a compliance doc, its runs, and associated data.
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const [doc] = await db
+    .select()
+    .from(complianceDocs)
+    .where(eq(complianceDocs.id, id));
+
+  if (!doc) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Delete blob
+  await deletePdf(doc.blobUrl).catch(() => {});
+
+  // Delete runs (cascades to requirements and results via schema)
+  const runs = await db
+    .select({ id: complianceRuns.id })
+    .from(complianceRuns)
+    .where(eq(complianceRuns.complianceDocId, id));
+
+  for (const run of runs) {
+    await db.delete(complianceResults).where(eq(complianceResults.complianceRunId, run.id));
+    await db.delete(requirements).where(eq(requirements.complianceRunId, run.id));
+  }
+  await db.delete(complianceRuns).where(eq(complianceRuns.complianceDocId, id));
+  await db.delete(complianceDocs).where(eq(complianceDocs.id, id));
+
+  return NextResponse.json({ deleted: true });
 }

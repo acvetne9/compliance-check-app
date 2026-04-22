@@ -1,0 +1,83 @@
+"use client";
+
+import { Plus } from "lucide-react";
+import { ComplianceItem } from "./compliance-item";
+
+interface ComplianceDoc {
+  id: string;
+  fileName: string;
+  hasResults?: boolean;
+  metCount?: number;
+  notMetCount?: number;
+  unclearCount?: number;
+}
+
+interface ComplianceListProps {
+  docs: ComplianceDoc[];
+  activeDocId: string | null;
+  searchFilter: string;
+  runningDocId: string | null;
+  runProgress: number | null;
+  runPolicyCount: number;
+  onClickDoc: (id: string) => void;
+  onRemoveDoc: (id: string) => void;
+  onAddDoc: () => void;
+}
+
+export function ComplianceList({
+  docs,
+  activeDocId,
+  searchFilter,
+  runningDocId,
+  runProgress,
+  runPolicyCount,
+  onClickDoc,
+  onRemoveDoc,
+  onAddDoc,
+}: ComplianceListProps) {
+  const filtered = searchFilter
+    ? docs.filter((d) =>
+        d.fileName.toLowerCase().includes(searchFilter.toLowerCase())
+      )
+    : docs;
+
+  return (
+    <div>
+      <div className="flex flex-col gap-0.5 px-1">
+        {filtered.length === 0 ? (
+          <p className="px-2 py-2 text-xs text-muted-foreground/50">
+            {searchFilter
+              ? "No matching docs"
+              : "No compliance docs uploaded yet"}
+          </p>
+        ) : (
+          filtered.map((doc) => (
+            <ComplianceItem
+              key={doc.id}
+              id={doc.id}
+              fileName={doc.fileName}
+              active={doc.id === activeDocId}
+              hasResults={doc.hasResults}
+              metCount={doc.metCount}
+              notMetCount={doc.notMetCount}
+              unclearCount={doc.unclearCount}
+              isRunning={doc.id === runningDocId}
+              progress={doc.id === runningDocId ? runProgress : null}
+              policyCount={doc.id === runningDocId ? runPolicyCount : 0}
+              onClick={onClickDoc}
+              onRemove={onRemoveDoc}
+            />
+          ))
+        )}
+      </div>
+
+      <button
+        onClick={onAddDoc}
+        className="mt-1 flex w-full items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-muted-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-muted-foreground"
+      >
+        <Plus className="size-3" />
+        Add Doc
+      </button>
+    </div>
+  );
+}
