@@ -10,15 +10,20 @@ import {
   complianceResults,
   policies,
   policyChunks,
+  cachedChecks,
 } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getUserId } from "@/lib/auth";
 import { extractRequirements, extractRequirementsFromPdf } from "@/lib/ai/extract-requirements";
 import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { complianceCheckSchema, hashRequirementText } from "@/types";
 
-const PARALLEL = 8; // 8 concurrent — boilerplate filtering reduces tokens, prompt caching helps
+// Tier 1 limits: 50 RPM, 50K ITPM, 10K OTPM
+// With prompt caching, only the first request per policy pays full input tokens.
+// Subsequent requests are ~200 tokens each, so we can push closer to 50 RPM.
+const PARALLEL = 5;
+const BATCH_DELAY_MS = 6500; // 5 req every 6.5s = ~46 RPM
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,21 +64,17 @@ export async function POST(request: NextRequest) {
 
           // Phase 1: Get requirements — use cached or extract now
           let extractedReqs: any;
-          // Re-fetch to get latest state
           const [freshDoc] = await db.select().from(complianceDocs).where(eq(complianceDocs.id, complianceDocId));
           const currentDoc = freshDoc ?? doc;
 
           if (currentDoc.requirementsJson) {
-            // Pre-extracted — instant
             send({ type: "extracting", message: "Loading requirements..." });
             extractedReqs = JSON.parse(currentDoc.requirementsJson);
           } else if (currentDoc.textContent) {
-            // Has text but no requirements yet — extract from text
             send({ type: "extracting", message: "Extracting requirements..." });
             extractedReqs = await extractRequirements(currentDoc.textContent, currentDoc.fileName);
             await db.update(complianceDocs).set({ requirementsJson: JSON.stringify(extractedReqs), extractionStatus: "done" }).where(eq(complianceDocs.id, complianceDocId));
           } else {
-            // No text, no requirements — extract directly from PDF
             send({ type: "extracting", message: "Reading PDF and extracting requirements..." });
             const response = await fetch(currentDoc.blobUrl);
             const pdfBuffer = Buffer.from(await response.arrayBuffer());
@@ -83,44 +84,77 @@ export async function POST(request: NextRequest) {
 
           send({ type: "requirements_extracted", count: extractedReqs.requirements.length, documentTitle: extractedReqs.documentTitle ?? doc.fileName });
 
-          const savedReqs: Array<{ id: string; externalId: string; text: string; hash: string }> = [];
+          const savedReqs: Array<{ id: string; externalId: string; text: string; hash: string; category: string }> = [];
           for (const req of extractedReqs.requirements) {
             const hash = hashRequirementText(req.text);
             const [saved] = await db.insert(requirementsTable).values({
               complianceRunId: run.id, externalId: req.id, section: req.section, text: req.text, textHash: hash, category: req.category,
             }).returning({ id: requirementsTable.id });
-            savedReqs.push({ id: saved.id, externalId: req.id, text: req.text, hash });
+            savedReqs.push({ id: saved.id, externalId: req.id, text: req.text, hash, category: req.category ?? "" });
           }
 
           await db.update(complianceRuns).set({ status: "checking", requirementsCount: savedReqs.length }).where(eq(complianceRuns.id, run.id));
 
-          // Phase 2: Check each policy — 1 req per call, PARALLEL concurrent
+          // Collect all requirement keywords for chunk filtering
+          const allReqKeywords = new Set<string>();
+          for (const req of savedReqs) {
+            const words = req.text.toLowerCase().match(/\b[a-z]{4,}\b/g) ?? [];
+            for (const w of words) allReqKeywords.add(w);
+          }
+
+          // Phase 2: Check each policy
           let totalMet = 0, totalNotMet = 0, totalUnclear = 0;
 
           for (let pi = 0; pi < policyList.length; pi++) {
             const policy = policyList[pi];
             send({ type: "policy_start", policyId: policy.id, policyFileName: policy.fileName, policyIndex: pi, totalPolicies: policyList.length, requirementCount: savedReqs.length });
 
+            // Load and filter chunks
             const allChunks = await db.select({ content: policyChunks.content, pageStart: policyChunks.pageStart, sectionHeader: policyChunks.sectionHeader })
               .from(policyChunks).where(eq(policyChunks.policyId, policy.id)).orderBy(policyChunks.chunkIndex);
 
-            // Filter out boilerplate chunks (revision history, board actions) to reduce tokens
             const SKIP_PATTERNS = /revision history|board action|regulatory agency approval|revised \d{2}\/\d{2}\/\d{4}.*\n.*revised/i;
-            const chunks = allChunks.filter((c) => !SKIP_PATTERNS.test(c.content));
+            const nonBoilerplate = allChunks.filter((c) => !SKIP_PATTERNS.test(c.content));
 
+            // Semantic chunk filtering: keep chunks that match any requirement keyword
+            const relevantChunks = nonBoilerplate.filter((c) => {
+              const text = `${c.sectionHeader ?? ""} ${c.content}`.toLowerCase();
+              for (const kw of allReqKeywords) {
+                if (text.includes(kw)) return true;
+              }
+              return false;
+            });
+
+            // Safety: if filtering removed too much, keep all non-boilerplate
+            const chunks = relevantChunks.length >= 3 ? relevantChunks : nonBoilerplate;
             const policyText = chunks.map((c) => `${c.sectionHeader ? `[${c.sectionHeader}] ` : ""}(p.${c.pageStart + 1}) ${c.content}`).join("\n\n---\n\n");
 
             let policyMet = 0, policyNotMet = 0, policyUnclear = 0;
 
-            // 1 requirement per call, PARALLEL concurrent — best accuracy with prompt caching for speed
             for (let ri = 0; ri < savedReqs.length; ri += PARALLEL) {
               const batch = savedReqs.slice(ri, ri + PARALLEL);
 
               await Promise.allSettled(batch.map(async (req, bi) => {
                 const reqIdx = ri + bi;
                 let status = "not_met", evidence = "", reasoning = "", confidence = 0;
+                let fromCache = false;
 
-                if (policyText.trim()) {
+                // Cache lookup: exact requirementHash + policyId
+                const [cached] = await db
+                  .select({ status: cachedChecks.status, evidence: cachedChecks.evidence, confidence: cachedChecks.confidence, reasoning: cachedChecks.reasoning })
+                  .from(cachedChecks)
+                  .where(and(eq(cachedChecks.requirementHash, req.hash), eq(cachedChecks.policyId, policy.id)))
+                  .limit(1);
+                if (cached) {
+                  status = cached.status;
+                  evidence = cached.evidence ?? "";
+                  confidence = cached.confidence ?? 0;
+                  reasoning = cached.reasoning ?? "";
+                  fromCache = true;
+                }
+
+                // API call only if no cache hit
+                if (!fromCache && policyText.trim()) {
                   const maxRetries = 3;
                   for (let attempt = 0; attempt < maxRetries; attempt++) {
                     try {
@@ -148,11 +182,10 @@ Always provide evidence and reasoning for EVERY status.` },
                       evidence = object.evidence;
                       reasoning = object.reasoning;
                       confidence = object.confidence;
-                      break; // Success
+                      break;
                     } catch (err: any) {
                       const isRateLimit = err?.message?.includes("rate limit") || err?.message?.includes("429");
                       if (isRateLimit && attempt < maxRetries - 1) {
-                        // Wait with exponential backoff: 5s, 15s, 45s
                         await new Promise((r) => setTimeout(r, 5000 * Math.pow(3, attempt)));
                       } else if (attempt === maxRetries - 1) {
                         status = "unclear";
@@ -160,6 +193,16 @@ Always provide evidence and reasoning for EVERY status.` },
                       }
                     }
                   }
+
+                  // Cache only results from actual API calls
+                  await db
+                    .insert(cachedChecks)
+                    .values({ requirementHash: req.hash, policyId: policy.id, status, evidence, confidence, reasoning })
+                    .onConflictDoUpdate({
+                      target: [cachedChecks.requirementHash, cachedChecks.policyId],
+                      set: { status, evidence, confidence, reasoning, checkedAt: new Date() },
+                    })
+                    .catch(() => {});
                 }
 
                 if (status === "met" || status === "not_applicable") policyMet++;
@@ -177,6 +220,11 @@ Always provide evidence and reasoning for EVERY status.` },
                   status, evidence, reasoning,
                 });
               }));
+
+              // Rate limit: wait between batches to stay under 50 RPM
+              if (ri + PARALLEL < savedReqs.length) {
+                await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
+              }
             }
 
             totalMet += policyMet; totalNotMet += policyNotMet; totalUnclear += policyUnclear;

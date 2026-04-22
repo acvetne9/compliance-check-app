@@ -176,6 +176,29 @@ export const cachedChecks = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Category-level policy cache (skip entire categories on re-runs)
+// ---------------------------------------------------------------------------
+
+export const categoryPolicyCache = pgTable(
+  "category_policy_cache",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    category: text("category").notNull(),
+    policyId: text("policy_id")
+      .notNull()
+      .references(() => policies.id, { onDelete: "cascade" }),
+    status: text("status").notNull(), // not_applicable = all reqs in category were N/A
+    checkedAt: timestamp("checked_at").defaultNow(),
+  },
+  (table) => [
+    unique("uq_category_policy").on(table.category, table.policyId),
+    index("idx_category_policy_lookup").on(table.category, table.policyId),
+  ]
+);
+
+// ---------------------------------------------------------------------------
 // Type exports
 // ---------------------------------------------------------------------------
 
@@ -186,3 +209,4 @@ export type ComplianceRun = typeof complianceRuns.$inferSelect;
 export type Requirement = typeof requirements.$inferSelect;
 export type ComplianceResult = typeof complianceResults.$inferSelect;
 export type CachedCheck = typeof cachedChecks.$inferSelect;
+export type CategoryPolicyCache = typeof categoryPolicyCache.$inferSelect;

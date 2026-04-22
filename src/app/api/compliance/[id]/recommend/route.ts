@@ -24,48 +24,49 @@ export async function GET(
   }
 
   // Get requirement keywords from the pre-extracted requirements
-  let keywords: string[] = [];
+  const allKeywords = new Set<string>();
   if (doc.requirementsJson) {
     try {
       const extracted = JSON.parse(doc.requirementsJson);
-      // Collect all keywords from requirements
-      const allKeywords = new Set<string>();
       for (const req of extracted.requirements ?? []) {
         for (const kw of req.keywords ?? []) {
-          allKeywords.add(kw.toLowerCase());
+          const lower = kw.toLowerCase().trim();
+          if (lower.length >= 3 && !STOP_WORDS.has(lower)) allKeywords.add(lower);
         }
-        // Also extract key terms from requirement text
+        // Extract key terms from requirement text
         const text = (req.text ?? "").toLowerCase();
         const terms = text.match(/\b[a-z]{4,}\b/g) ?? [];
         for (const t of terms) {
           if (!STOP_WORDS.has(t)) allKeywords.add(t);
         }
       }
-      keywords = [...allKeywords];
     } catch {}
   }
 
-  // Also extract terms from the doc text (or re-fetch if extracting)
-  let docText = (doc.textContent ?? "").toLowerCase();
-  if (!docText && doc.extractionStatus === "extracting") {
-    // Extraction in progress — use filename terms for now
-    docText = doc.fileName.toLowerCase().replace(/[._-]/g, " ");
-  }
-  if (docText) {
-    const docTerms = docText.match(/\b[a-z]{5,}\b/g) ?? [];
-    for (const t of docTerms.slice(0, 200)) {
-      if (!STOP_WORDS.has(t)) keywords.push(t);
+  // Fallback: extract terms from doc text or filename
+  if (allKeywords.size === 0) {
+    const fallbackText = (doc.textContent ?? doc.fileName ?? "")
+      .toLowerCase()
+      .replace(/[._-]/g, " ");
+    const fallbackTerms = fallbackText.match(/\b[a-z]{4,}\b/g) ?? [];
+    for (const t of fallbackTerms) {
+      if (!STOP_WORDS.has(t)) allKeywords.add(t);
     }
   }
 
-  // Deduplicate
-  keywords = [...new Set(keywords)];
+  const keywords = [...allKeywords];
 
   if (keywords.length === 0) {
     return NextResponse.json({ recommendations: [] });
   }
 
-  // Score each policy by how many keywords its summary contains
+  // Build word-boundary regex for each keyword to avoid substring false positives
+  const keywordPatterns = keywords.map((kw) => ({
+    kw,
+    re: new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"),
+  }));
+
+  // Count how many policies each keyword appears in (for IDF-like weighting)
   const allPolicies = await db
     .select({
       id: policies.id,
@@ -75,22 +76,38 @@ export async function GET(
     })
     .from(policies);
 
+  const docFreq = new Map<string, number>();
+  for (const { kw, re } of keywordPatterns) {
+    let count = 0;
+    for (const p of allPolicies) {
+      const text = `${p.summary ?? ""} ${p.fileName}`.toLowerCase();
+      if (re.test(text)) count++;
+    }
+    docFreq.set(kw, count);
+  }
+
+  const totalPolicies = allPolicies.length || 1;
+
   const scored = allPolicies
     .map((p) => {
       const summary = (p.summary ?? "").toLowerCase();
       const fileName = p.fileName.toLowerCase();
       let score = 0;
 
-      for (const kw of keywords) {
-        if (summary.includes(kw)) score++;
-        if (fileName.includes(kw)) score += 2; // Filename match is stronger
+      for (const { kw, re } of keywordPatterns) {
+        const df = docFreq.get(kw) ?? 0;
+        // Rare keywords (appearing in fewer policies) get higher weight
+        const idf = df > 0 ? Math.log(totalPolicies / df) + 1 : 0;
+
+        if (re.test(summary)) score += idf;
+        if (re.test(fileName)) score += idf * 2; // Filename match is stronger
       }
 
-      return { ...p, score };
+      return { ...p, score: Math.round(score * 10) / 10 };
     })
     .filter((p) => p.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 30); // Top 30 recommendations
+    .slice(0, 30);
 
   return NextResponse.json({
     recommendations: scored.map((p) => ({
@@ -116,4 +133,8 @@ const STOP_WORDS = new Set([
   "established", "establishes", "policy", "procedure", "process",
   "services", "service", "member", "members", "health", "care",
   "provider", "providers", "coverage", "covered", "medical",
+  "organization", "organizations", "plan", "plans", "program",
+  "programs", "based", "related", "applicable", "appropriate",
+  "specific", "identify", "identified", "document", "documented",
+  "maintain", "maintained", "written", "implement", "implemented",
 ]);
