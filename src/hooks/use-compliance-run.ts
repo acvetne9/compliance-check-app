@@ -11,6 +11,7 @@ interface UseComplianceRunReturn {
   runId: string | null;
   error: string | null;
   startRun: (complianceDocId: string, policyIds?: string[]) => Promise<void>;
+  resumeRun: (runId: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -29,8 +30,8 @@ export function useComplianceRun(): UseComplianceRunReturn {
     setError(null);
   }, []);
 
-  const startRun = useCallback(
-    async (complianceDocId: string, policyIds?: string[]) => {
+  const executeRun = useCallback(
+    async (body: Record<string, unknown>) => {
       reset();
       setStatus("starting");
 
@@ -38,14 +39,10 @@ export function useComplianceRun(): UseComplianceRunReturn {
         const abort = new AbortController();
         abortRef.current = abort;
 
-        // POST starts the run and returns an SSE stream directly
         const res = await fetch("/api/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            complianceDocId,
-            policyIds: policyIds?.length ? policyIds : undefined,
-          }),
+          body: JSON.stringify(body),
           signal: abort.signal,
         });
 
@@ -111,5 +108,22 @@ export function useComplianceRun(): UseComplianceRunReturn {
     [reset]
   );
 
-  return { status, events, runId, error, startRun, reset };
+  const startRun = useCallback(
+    async (complianceDocId: string, policyIds?: string[]) => {
+      await executeRun({
+        complianceDocId,
+        policyIds: policyIds?.length ? policyIds : undefined,
+      });
+    },
+    [executeRun]
+  );
+
+  const resumeRun = useCallback(
+    async (resumeRunId: string) => {
+      await executeRun({ resumeRunId });
+    },
+    [executeRun]
+  );
+
+  return { status, events, runId, error, startRun, resumeRun, reset };
 }

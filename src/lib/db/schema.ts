@@ -23,6 +23,7 @@ export const policies = pgTable(
     blobUrl: text("blob_url").notNull(),
     summary: text("summary"),
     structuredSummary: text("structured_summary"), // JSON: key provisions for Haiku triage
+    cachedPolicyText: text("cached_policy_text"), // Pre-concatenated boilerplate-filtered text
     pageCount: integer("page_count"),
     tokenCount: integer("token_count"),
     isIngested: boolean("is_ingested").default(false),

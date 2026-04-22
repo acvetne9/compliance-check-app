@@ -5,11 +5,13 @@ import { db } from "@/lib/db";
 import { complianceDocs } from "@/lib/db/schema";
 import { uploadPdf } from "@/lib/blob";
 import { getUserId } from "@/lib/auth";
+import { extractPdfText } from "@/lib/pdf";
 
 /**
  * POST /api/upload
- * Upload compliance PDF → store in blob → create DB record.
- * Returns instantly. Text/requirement extraction happens in the run route.
+ * Upload compliance PDF → extract text (fast) → create DB record.
+ * Text extraction via pdf-parse is < 1 second. Requirement extraction
+ * is deferred to the run route where it streams progress via SSE.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,13 +31,25 @@ export async function POST(request: NextRequest) {
 
     const userId = await getUserId();
 
+    // Extract text and real page count (fast — no API calls)
+    let textContent: string | null = null;
+    let pageCount = 1;
+    try {
+      const extraction = await extractPdfText(buffer);
+      textContent = extraction.text;
+      pageCount = extraction.totalPages;
+    } catch {
+      pageCount = Math.max(1, Math.round(buffer.length / 2048));
+    }
+
     const [doc] = await db
       .insert(complianceDocs)
       .values({
         fileName: file.name,
         blobUrl,
         userId,
-        pageCount: Math.max(1, Math.round(buffer.length / 2048)),
+        pageCount,
+        textContent,
       })
       .returning();
 

@@ -57,6 +57,7 @@ export async function extractRequirementsFromPdf(
     model: anthropic("claude-haiku-4-5-20251001"),
     schema: extractedRequirementsSchema,
     maxOutputTokens: 64000,
+    temperature: 0,
     messages: [
       { role: "system" as const, content: SYSTEM_PROMPT },
       {
@@ -89,6 +90,7 @@ async function extractRequirementsSinglePass(
     system: SYSTEM_PROMPT,
     prompt: `Document: ${fileName}\n\n${fullText}`,
     maxOutputTokens: 64000,
+    temperature: 0,
   });
 
   return object;
@@ -118,6 +120,7 @@ async function extractRequirementsMultiPass(
       system: SYSTEM_PROMPT,
       prompt: `Document: ${fileName} (Section ${i + 1} of ${sections.length})\n\n${sections[i]}`,
       maxOutputTokens: 32000,
+      temperature: 0,
     });
 
     if (i === 0) documentTitle = object.documentTitle;

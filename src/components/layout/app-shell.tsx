@@ -66,7 +66,7 @@ export function AppShell() {
   const [runningDocId, setRunningDocId] = useState<string | null>(null);
   const [runPolicyCount, setRunPolicyCount] = useState(0);
 
-  const { status: runStatus, events, startRun, reset: resetRun } = useComplianceRun();
+  const { status: runStatus, events, startRun, resumeRun, reset: resetRun } = useComplianceRun();
 
   const isRunning = runStatus === "running" || runStatus === "starting";
   const hasRunEvents = events.length > 0;
@@ -482,7 +482,7 @@ export function AppShell() {
   const handleViewRun = useCallback(async (runId: string, docFileName: string) => {
     const deselecting = activeRunId === runId;
     setActiveRunId(deselecting ? null : runId);
-    setActiveComplianceDocId(null); // deselect any active compliance doc
+    setActiveComplianceDocId(null);
 
     if (deselecting) {
       setPreview(null);
@@ -491,14 +491,11 @@ export function AppShell() {
       return;
     }
 
-    // Just highlight the checked policies — no results breakdown
     try {
       const res = await fetch(`/api/runs/${runId}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.requirements) {
-        setPreview(null);
-        setResultsData(null);
         const pIds = new Set<string>();
         for (const req of data.requirements) {
           for (const r of req.results ?? []) {
@@ -506,6 +503,31 @@ export function AppShell() {
           }
         }
         setCheckedPolicyIds(pIds);
+
+        setPreview(null);
+        setResultsData({
+          documentTitle: docFileName.replace(/\.pdf$/i, ""),
+          requirements: data.requirements.map((req: any) => ({
+            id: req.id,
+            externalId: req.externalId,
+            section: req.section,
+            text: req.text,
+            category: req.category,
+            aggregatedStatus: req.aggregatedStatus,
+            results: (req.results ?? []).map((r: any) => ({
+              policyFileName: r.policyFileName,
+              policyId: r.policyId,
+              status: r.status,
+              evidence: r.evidence ?? "",
+              reasoning: r.reasoning ?? "",
+              confidence: r.confidence ?? 0,
+            })),
+          })),
+          metCount: data.run?.metCount ?? 0,
+          notMetCount: data.run?.notMetCount ?? 0,
+          unclearCount: data.run?.unclearCount ?? 0,
+          viewMode: "full",
+        });
       }
     } catch {}
   }, [activeRunId]);
@@ -580,6 +602,17 @@ export function AppShell() {
       refreshData();
     },
     [activeComplianceDocId, refreshData]
+  );
+
+  const handleResumeRun = useCallback(
+    async (runId: string) => {
+      setResultsData(null);
+      setLastOpenedPolicyId(null);
+      setPreview(null);
+      setRunningDocId(null);
+      await resumeRun(runId);
+    },
+    [resumeRun]
   );
 
   const handleRemoveRun = useCallback(
@@ -682,6 +715,7 @@ export function AppShell() {
           activeRunId={activeRunId}
           onClickRun={handleViewRun}
           onRemoveRun={handleRemoveRun}
+          onResumeRun={handleResumeRun}
         />
 
         <main className="min-w-0 flex-1 overflow-y-auto pb-24">

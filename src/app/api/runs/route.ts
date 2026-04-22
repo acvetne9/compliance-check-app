@@ -27,8 +27,8 @@ export async function GET() {
     })
     .from(complianceRuns)
     .innerJoin(complianceDocs, eq(complianceRuns.complianceDocId, complianceDocs.id))
-    .where(and(eq(complianceRuns.status, "completed"), eq(complianceRuns.userId, userId)))
-    .orderBy(desc(complianceRuns.completedAt));
+    .where(eq(complianceRuns.userId, userId))
+    .orderBy(desc(complianceRuns.startedAt));
 
   return NextResponse.json({ runs });
 }

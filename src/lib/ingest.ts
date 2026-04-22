@@ -101,7 +101,7 @@ export async function ingestPolicy(
     })
     .returning({ id: policies.id });
 
-  // 5. Store chunks (no embeddings — using Haiku triage instead)
+  // 5. Store chunks
   if (chunks.length > 0) {
     await db.insert(policyChunks).values(
       chunks.map((chunk) => ({
@@ -115,6 +115,14 @@ export async function ingestPolicy(
       }))
     );
   }
+
+  // 6. Cache concatenated policy text (boilerplate filtered)
+  const SKIP_PATTERNS = /revision history|board action|regulatory agency approval|revised \d{2}\/\d{2}\/\d{4}.*\n.*revised/i;
+  const cachedPolicyText = chunks
+    .filter((c) => !SKIP_PATTERNS.test(c.content))
+    .map((c) => `${c.sectionHeader ? `[${c.sectionHeader}] ` : ""}(p.${c.pageStart + 1}) ${c.content}`)
+    .join("\n\n---\n\n");
+  await db.update(policies).set({ cachedPolicyText }).where(eq(policies.id, policy.id));
 
   return {
     policyId: policy.id,

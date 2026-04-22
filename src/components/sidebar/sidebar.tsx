@@ -39,6 +39,7 @@ interface RunData {
   notMetCount: number | null;
   unclearCount: number | null;
   completedAt: string | null;
+  startedAt: string | null;
 }
 
 interface SidebarProps {
@@ -65,6 +66,7 @@ interface SidebarProps {
   activeRunId: string | null;
   onClickRun: (runId: string, docFileName: string) => void;
   onRemoveRun: (runId: string) => void;
+  onResumeRun?: (runId: string) => void;
 }
 
 export function Sidebar({
@@ -91,6 +93,7 @@ export function Sidebar({
   activeRunId,
   onClickRun,
   onRemoveRun,
+  onResumeRun,
 }: SidebarProps) {
   const [search, setSearch] = useState("");
 
@@ -150,6 +153,7 @@ export function Sidebar({
                 activeRunId={activeRunId}
                 onClickRun={onClickRun}
                 onRemoveRun={onRemoveRun}
+                onResumeRun={onResumeRun}
               />
             </CollapsibleSection>
           </div>

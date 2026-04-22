@@ -137,10 +137,11 @@ async function seedComplianceDocs() {
     await db.insert(complianceDocs).values({
       fileName,
       blobUrl,
+      textContent: extraction.text,
       pageCount: extraction.totalPages,
     });
 
-    console.log(`  ✓ ${fileName} (${extraction.totalPages} pages)`);
+    console.log(`  ✓ ${fileName} (${extraction.totalPages} pages, ${extraction.text.length} chars)`);
   }
 }
 
